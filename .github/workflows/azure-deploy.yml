@@ -71,5 +71,5 @@ jobs:
         with:
           app-name: 'exitboard'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_0DD61F4AAF4F40B591ECABF8F6305BB9 }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: . 
