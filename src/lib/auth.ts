@@ -280,4 +280,25 @@ export async function verifyToken(token: string): Promise<{ userId: string } | n
     console.error('Error verifying token:', error)
     return null
   }
+}
+
+export async function deleteAccount(): Promise<void> {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Not authenticated')
+  }
+
+  const response = await fetch('/api/users/delete', {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    const data = await response.json()
+    throw new Error(data.error || 'Failed to delete account')
+  }
+
+  localStorage.removeItem('token')
 } 
