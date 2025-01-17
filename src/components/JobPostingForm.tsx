@@ -35,7 +35,7 @@ export default function JobPostingForm({
       min: '',
       max: '',
       currency: 'USD',
-      period: 'YEAR',
+      period: 'YEARLY',
       isNegotiable: false
     },
     applicationDeadline: '',
@@ -70,7 +70,7 @@ export default function JobPostingForm({
           min: '',
           max: '',
           currency: 'USD',
-          period: 'YEAR',
+          period: 'YEARLY',
           isNegotiable: false
         }
       })
@@ -389,10 +389,10 @@ export default function JobPostingForm({
               required
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             >
-              <option value="HOUR">Hourly</option>
-              <option value="WEEK">Weekly</option>
-              <option value="MONTH">Monthly</option>
-              <option value="YEAR">Yearly</option>
+              <option value="HOURLY">Hourly</option>
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+              <option value="YEARLY">Yearly</option>
             </select>
           </div>
 

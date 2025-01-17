@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
 
@@ -15,59 +9,59 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  password      String
-  company       String?
-  title         String?
-  jobPostings   JobPosting[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          String       @id @default(cuid())
+  email       String       @unique
+  password    String
+  name        String?
+  company     String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  title       String?
+  jobPostings JobPosting[]
 }
 
 model JobPosting {
-  id                    String    @id @default(cuid())
-  title                 String
-  company               String
-  companyDescription    String?
-  companyWebsite        String?
-  companySize           String?
-  companyIndustry       String?
-  location              String
-  type                  JobType
-  level                 JobLevel
-  employmentType        EmploymentType?
-  workplaceType         WorkplaceType?
-  description           String
-  responsibilities      String[]
-  requirements         String[]
-  preferredQualifications String[]
-  skills               String[]
-  benefits             String[]
-  salary               Salary?
-  applicationDeadline   DateTime?
-  startDate            DateTime?
-  contactEmail         String
-  contactPhone         String?
-  applicationUrl       String?
+  id                      String          @id @default(cuid())
+  title                   String
+  company                 String
+  location                String
+  type                    JobType
+  level                   JobLevel
+  description             String
+  requirements            String[]
+  contactEmail            String
+  authorId                String
+  status                  PostingStatus   @default(ACTIVE)
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  applicationDeadline     DateTime?
   applicationInstructions String?
-  author               User      @relation(fields: [authorId], references: [id])
-  authorId             String
-  status               PostingStatus @default(ACTIVE)
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  applicationUrl          String?
+  benefits                String[]
+  companyDescription      String?
+  companyIndustry         String?
+  companySize             String?
+  companyWebsite          String?
+  contactPhone            String?
+  employmentType          EmploymentType?
+  preferredQualifications String[]
+  responsibilities        String[]
+  skills                  String[]
+  startDate               DateTime?
+  workplaceType           WorkplaceType?
+  author                  User            @relation(fields: [authorId], references: [id])
+  salary                  Salary?
 }
 
 model Salary {
-  id            String     @id @default(cuid())
-  min           Float
-  max           Float
-  currency      String     @default("USD")
-  period        SalaryPeriod
-  isNegotiable  Boolean    @default(false)
-  jobPosting    JobPosting @relation(fields: [jobPostingId], references: [id])
-  jobPostingId  String     @unique
+  id           String       @id @default(cuid())
+  min          Float
+  max          Float
+  currency     String       @default("USD")
+  period       SalaryPeriod
+  jobPostingId String       @unique
+  isNegotiable Boolean      @default(false)
+  jobPosting   JobPosting   @relation(fields: [jobPostingId], references: [id])
 }
 
 enum JobType {
@@ -107,8 +101,8 @@ enum PostingStatus {
 }
 
 enum SalaryPeriod {
-  HOUR
-  WEEK
-  MONTH
-  YEAR
+  HOURLY
+  MONTHLY
+  YEARLY
+  WEEKLY
 }
