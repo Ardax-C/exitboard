@@ -34,7 +34,9 @@ jobs:
       - name: Create deployment package
         run: |
           mkdir deployment
-          cp -r .next package.json package-lock.json next.config.js public prisma deployment/
+          cp -r .next package.json package-lock.json prisma deployment/
+          if [ -f "next.config.js" ]; then cp next.config.js deployment/; fi
+          if [ -d "public" ]; then cp -r public deployment/; fi
           cd deployment
           zip -r ../release.zip ./*
 
