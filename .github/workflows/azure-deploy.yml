@@ -31,8 +31,12 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+      - name: Create deployment package
+        run: |
+          mkdir deployment
+          cp -r .next package.json package-lock.json next.config.js public prisma deployment/
+          cd deployment
+          zip -r ../release.zip ./*
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
@@ -55,6 +59,9 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
+
+      - name: Install production dependencies
+        run: npm ci --only=production
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp

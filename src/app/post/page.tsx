@@ -5,6 +5,7 @@ import { ChevronDownIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/contexts/UserContext'
 import { getAuthToken } from '@/lib/auth'
+import Link from 'next/link'
 
 const jobTypes = ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'REMOTE']
 const jobLevels = ['ENTRY', 'JUNIOR', 'MID', 'SENIOR', 'LEAD', 'EXECUTIVE']
@@ -60,6 +61,40 @@ export default function PostJobPage() {
     applicationUrl: '',
     applicationInstructions: '',
   })
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
+        <div className="max-w-md w-full space-y-6 text-center">
+          <div>
+            <h2 className="text-3xl font-bold text-white">Sign in to post a job</h2>
+            <p className="mt-2 text-sm text-gray-300">
+              You need to be signed in to post job opportunities on ExitBoard
+            </p>
+          </div>
+          <div className="flex flex-col space-y-4">
+            <Link
+              href="/auth/signin"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Sign in
+            </Link>
+            <div className="flex items-center">
+              <div className="flex-grow border-t border-gray-700"></div>
+              <span className="px-3 text-sm text-gray-500">or</span>
+              <div className="flex-grow border-t border-gray-700"></div>
+            </div>
+            <Link
+              href="/auth/signup"
+              className="w-full flex justify-center py-2 px-4 border border-gray-700 rounded-md shadow-sm text-sm font-medium text-gray-300 bg-transparent hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Create an account
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
