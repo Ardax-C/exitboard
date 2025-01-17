@@ -7,14 +7,14 @@ import { webcrypto } from 'crypto'
 
 // Encryption helper function
 async function encryptResponse(data: any, key: string) {
-  // Convert string to ArrayBuffer
-  function stringToArrayBuffer(str: string) {
-    return new TextEncoder().encode(str).buffer;
+  // Convert string to Uint8Array
+  function stringToUint8Array(str: string): Uint8Array {
+    return new TextEncoder().encode(str);
   }
 
   // Convert ArrayBuffer to base64
-  function arrayBufferToBase64(buffer: ArrayBuffer) {
-    return Buffer.from(buffer).toString('base64');
+  function arrayBufferToBase64(buffer: ArrayBuffer): string {
+    return Buffer.from(new Uint8Array(buffer)).toString('base64');
   }
 
   // Derive key using PBKDF2
@@ -39,11 +39,12 @@ async function encryptResponse(data: any, key: string) {
     ['encrypt']
   );
 
-  // Generate IV
+  // Generate IV and auth tag
   const iv = webcrypto.getRandomValues(new Uint8Array(12));
   const authTag = webcrypto.getRandomValues(new Uint8Array(16));
 
   // Encrypt the data
+  const dataToEncrypt = stringToUint8Array(JSON.stringify(data));
   const encrypted = await webcrypto.subtle.encrypt(
     {
       name: 'AES-GCM',
@@ -51,13 +52,13 @@ async function encryptResponse(data: any, key: string) {
       additionalData: authTag
     },
     derivedKey,
-    stringToArrayBuffer(JSON.stringify(data))
+    dataToEncrypt
   );
 
   return {
     encrypted: arrayBufferToBase64(encrypted),
-    iv: arrayBufferToBase64(iv),
-    authTag: arrayBufferToBase64(authTag)
+    iv: arrayBufferToBase64(iv.buffer),
+    authTag: arrayBufferToBase64(authTag.buffer)
   };
 }
 
