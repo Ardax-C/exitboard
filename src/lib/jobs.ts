@@ -119,4 +119,43 @@ export async function updateJobPosting(
   }
 
   return response.json()
+}
+
+export async function getMyJobPostings() {
+  const token = getAuthToken()
+  if (!token) {
+    throw new Error('Authentication required')
+  }
+
+  const response = await fetch('/api/jobs/my-listings', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to fetch job postings')
+  }
+
+  return response.json()
+}
+
+export async function deleteJobPosting(id: string) {
+  const token = getAuthToken()
+  if (!token) {
+    throw new Error('Authentication required')
+  }
+
+  const response = await fetch(`/api/jobs/${id}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to delete job posting')
+  }
 } 
