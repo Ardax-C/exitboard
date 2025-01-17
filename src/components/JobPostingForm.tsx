@@ -22,9 +22,9 @@ export default function JobPostingForm({
     companyIndustry: '',
     location: '',
     type: 'FULL_TIME',
-    level: 'MID_LEVEL',
+    level: 'MID',
     employmentType: 'PERMANENT',
-    workplaceType: 'ONSITE',
+    workplaceType: 'ON_SITE',
     description: '',
     responsibilities: '',
     requirements: '',
@@ -35,7 +35,7 @@ export default function JobPostingForm({
       min: '',
       max: '',
       currency: 'USD',
-      period: 'YEARLY',
+      period: 'YEAR',
       isNegotiable: false
     },
     applicationDeadline: '',
@@ -70,7 +70,7 @@ export default function JobPostingForm({
           min: '',
           max: '',
           currency: 'USD',
-          period: 'YEARLY',
+          period: 'YEAR',
           isNegotiable: false
         }
       })
@@ -154,6 +154,7 @@ export default function JobPostingForm({
               value={formData.location}
               onChange={handleChange}
               required
+              placeholder="e.g., San Francisco, CA or Remote"
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             />
           </div>
@@ -171,6 +172,7 @@ export default function JobPostingForm({
               <option value="PART_TIME">Part Time</option>
               <option value="CONTRACT">Contract</option>
               <option value="INTERNSHIP">Internship</option>
+              <option value="REMOTE">Remote</option>
             </select>
           </div>
 
@@ -183,11 +185,11 @@ export default function JobPostingForm({
               required
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             >
-              <option value="ENTRY_LEVEL">Entry Level</option>
-              <option value="MID_LEVEL">Mid Level</option>
+              <option value="ENTRY">Entry Level</option>
+              <option value="JUNIOR">Junior</option>
+              <option value="MID">Mid Level</option>
               <option value="SENIOR">Senior</option>
               <option value="LEAD">Lead</option>
-              <option value="MANAGER">Manager</option>
               <option value="EXECUTIVE">Executive</option>
             </select>
           </div>
@@ -203,6 +205,7 @@ export default function JobPostingForm({
             >
               <option value="PERMANENT">Permanent</option>
               <option value="TEMPORARY">Temporary</option>
+              <option value="SEASONAL">Seasonal</option>
               <option value="CONTRACT">Contract</option>
             </select>
           </div>
@@ -216,7 +219,7 @@ export default function JobPostingForm({
               required
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             >
-              <option value="ONSITE">On-site</option>
+              <option value="ON_SITE">On-site</option>
               <option value="REMOTE">Remote</option>
               <option value="HYBRID">Hybrid</option>
             </select>
@@ -224,114 +227,54 @@ export default function JobPostingForm({
         </div>
       </div>
 
-      {/* Company Information */}
+      {/* Job Description */}
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">Company Information</h2>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-300">Company Description</label>
-            <textarea
-              name="companyDescription"
-              value={formData.companyDescription}
-              onChange={handleChange}
-              rows={4}
-              className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300">Company Website</label>
-            <input
-              type="url"
-              name="companyWebsite"
-              value={formData.companyWebsite}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300">Company Size</label>
-            <select
-              name="companySize"
-              value={formData.companySize}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-            >
-              <option value="">Select size</option>
-              <option value="1-10">1-10 employees</option>
-              <option value="11-50">11-50 employees</option>
-              <option value="51-200">51-200 employees</option>
-              <option value="201-500">201-500 employees</option>
-              <option value="501-1000">501-1000 employees</option>
-              <option value="1001+">1001+ employees</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300">Industry</label>
-            <input
-              type="text"
-              name="companyIndustry"
-              value={formData.companyIndustry}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Job Details */}
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">Job Details</h2>
+        <h2 className="text-xl font-semibold text-white">Job Description</h2>
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300">Job Description</label>
+            <label className="block text-sm font-medium text-gray-300">Overview</label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
+              rows={4}
               required
-              rows={6}
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             />
-            <p className="mt-2 text-sm text-gray-400">
-              Provide a detailed description of the role and its context within your organization.
-            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300">Responsibilities</label>
+            <label className="block text-sm font-medium text-gray-300">
+              Key Responsibilities (one per line)
+            </label>
             <textarea
               name="responsibilities"
               value={formData.responsibilities}
               onChange={handleChange}
+              rows={4}
               required
-              rows={6}
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             />
-            <p className="mt-2 text-sm text-gray-400">
-              List the key responsibilities, one per line.
-            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300">Requirements</label>
+            <label className="block text-sm font-medium text-gray-300">
+              Required Qualifications (one per line)
+            </label>
             <textarea
               name="requirements"
               value={formData.requirements}
               onChange={handleChange}
+              rows={4}
               required
-              rows={6}
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             />
-            <p className="mt-2 text-sm text-gray-400">
-              List the required qualifications and experience, one per line.
-            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300">Preferred Qualifications</label>
+            <label className="block text-sm font-medium text-gray-300">
+              Preferred Qualifications (one per line)
+            </label>
             <textarea
               name="preferredQualifications"
               value={formData.preferredQualifications}
@@ -339,46 +282,27 @@ export default function JobPostingForm({
               rows={4}
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             />
-            <p className="mt-2 text-sm text-gray-400">
-              List any preferred qualifications, one per line.
-            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300">Skills</label>
+            <label className="block text-sm font-medium text-gray-300">
+              Required Skills (one per line)
+            </label>
             <textarea
               name="skills"
               value={formData.skills}
               onChange={handleChange}
-              required
               rows={4}
+              required
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             />
-            <p className="mt-2 text-sm text-gray-400">
-              List required skills and technologies, one per line.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300">Benefits</label>
-            <textarea
-              name="benefits"
-              value={formData.benefits}
-              onChange={handleChange}
-              required
-              rows={4}
-              className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-            />
-            <p className="mt-2 text-sm text-gray-400">
-              List the benefits and perks, one per line.
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Salary Information */}
+      {/* Compensation & Benefits */}
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">Salary Information</h2>
+        <h2 className="text-xl font-semibold text-white">Compensation & Benefits</h2>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-300">Minimum Salary</label>
@@ -418,6 +342,7 @@ export default function JobPostingForm({
               <option value="GBP">GBP</option>
               <option value="CAD">CAD</option>
               <option value="AUD">AUD</option>
+              <option value="JPY">JPY</option>
             </select>
           </div>
 
@@ -430,10 +355,44 @@ export default function JobPostingForm({
               required
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             >
-              <option value="HOURLY">Hourly</option>
-              <option value="MONTHLY">Monthly</option>
-              <option value="YEARLY">Yearly</option>
+              <option value="HOUR">Hourly</option>
+              <option value="WEEK">Weekly</option>
+              <option value="MONTH">Monthly</option>
+              <option value="YEAR">Yearly</option>
             </select>
+          </div>
+
+          <div className="sm:col-span-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="salary.isNegotiable"
+                checked={formData.salary.isNegotiable}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  salary: { ...prev.salary, isNegotiable: e.target.checked }
+                }))}
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <label className="text-sm font-medium text-gray-300">
+                Salary is negotiable
+              </label>
+            </div>
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-300">
+              Benefits & Perks (one per line)
+            </label>
+            <textarea
+              name="benefits"
+              value={formData.benefits}
+              onChange={handleChange}
+              rows={4}
+              required
+              placeholder="e.g., Health insurance&#10;401(k) matching&#10;Flexible work hours"
+              className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
+            />
           </div>
         </div>
       </div>
@@ -454,7 +413,7 @@ export default function JobPostingForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300">Start Date</label>
+            <label className="block text-sm font-medium text-gray-300">Expected Start Date</label>
             <input
               type="date"
               name="startDate"
@@ -477,7 +436,7 @@ export default function JobPostingForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300">Contact Phone</label>
+            <label className="block text-sm font-medium text-gray-300">Contact Phone (optional)</label>
             <input
               type="tel"
               name="contactPhone"
@@ -487,13 +446,14 @@ export default function JobPostingForm({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300">Application URL</label>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-300">Application URL (optional)</label>
             <input
               type="url"
               name="applicationUrl"
               value={formData.applicationUrl}
               onChange={handleChange}
+              placeholder="https://..."
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             />
           </div>
@@ -505,35 +465,19 @@ export default function JobPostingForm({
               value={formData.applicationInstructions}
               onChange={handleChange}
               rows={4}
+              required
+              placeholder="Provide any specific instructions for applicants..."
               className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
             />
           </div>
         </div>
       </div>
 
-      {/* Status */}
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">Posting Status</h2>
-        <div>
-          <select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-          >
-            <option value="DRAFT">Draft</option>
-            <option value="ACTIVE">Active</option>
-            <option value="CLOSED">Closed</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Submit Button */}
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-4">
         <button
           type="submit"
-          className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-900"
+          disabled={formData.title === ''}
+          className="rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitButtonText}
         </button>
