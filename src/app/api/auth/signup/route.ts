@@ -39,17 +39,15 @@ async function encryptResponse(data: any, key: string) {
     ['encrypt']
   );
 
-  // Generate IV and auth tag
+  // Generate IV
   const iv = webcrypto.getRandomValues(new Uint8Array(12));
-  const authTag = webcrypto.getRandomValues(new Uint8Array(16));
 
   // Encrypt the data
   const dataToEncrypt = stringToUint8Array(JSON.stringify(data));
   const encrypted = await webcrypto.subtle.encrypt(
     {
       name: 'AES-GCM',
-      iv: iv,
-      additionalData: authTag
+      iv: iv
     },
     derivedKey,
     dataToEncrypt
@@ -57,8 +55,7 @@ async function encryptResponse(data: any, key: string) {
 
   return {
     encrypted: arrayBufferToBase64(encrypted),
-    iv: arrayBufferToBase64(iv.buffer),
-    authTag: arrayBufferToBase64(authTag.buffer)
+    iv: arrayBufferToBase64(iv.buffer)
   };
 }
 

@@ -16,7 +16,7 @@ interface AuthState {
 }
 
 // Decryption helper function
-async function decryptResponse(encrypted: string, iv: string, authTag: string, key: string) {
+async function decryptResponse(encrypted: string, iv: string, key: string) {
   // Convert base64 to ArrayBuffer
   function base64ToArrayBuffer(base64: string) {
     const binaryString = window.atob(base64);
@@ -53,8 +53,7 @@ async function decryptResponse(encrypted: string, iv: string, authTag: string, k
   const decrypted = await window.crypto.subtle.decrypt(
     {
       name: 'AES-GCM',
-      iv: base64ToArrayBuffer(iv),
-      additionalData: base64ToArrayBuffer(authTag)
+      iv: base64ToArrayBuffer(iv)
     },
     derivedKey,
     base64ToArrayBuffer(encrypted)
@@ -117,12 +116,11 @@ export async function signIn(data: { email: string; password: string }) {
     throw new Error(error.error || 'Failed to sign in')
   }
 
-  const { encrypted, iv, authTag } = await response.json()
+  const { encrypted, iv } = await response.json()
   return decryptResponse(
     encrypted,
     iv,
-    authTag,
-    localStorage.getItem('jwt_secret') || 'fallback-secret-key'
+    process.env.JWT_SECRET || 'fallback-secret-key'
   )
 }
 
@@ -145,12 +143,11 @@ export async function signUp(data: {
     throw new Error(error.error || 'Failed to sign up')
   }
 
-  const { encrypted, iv, authTag } = await response.json()
+  const { encrypted, iv } = await response.json()
   return decryptResponse(
     encrypted,
     iv,
-    authTag,
-    localStorage.getItem('jwt_secret') || 'fallback-secret-key'
+    process.env.JWT_SECRET || 'fallback-secret-key'
   )
 }
 
