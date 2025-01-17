@@ -5,8 +5,11 @@ import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import { webcrypto } from 'crypto'
 
+// Use a constant key for encryption/decryption
+const ENCRYPTION_KEY = 'exitboard-encryption-key-2024'
+
 // Encryption helper function
-async function encryptResponse(data: any, key: string) {
+async function encryptResponse(data: any) {
   // Convert string to Uint8Array
   function stringToUint8Array(str: string): Uint8Array {
     return new TextEncoder().encode(str);
@@ -20,7 +23,7 @@ async function encryptResponse(data: any, key: string) {
   // Derive key using PBKDF2
   const keyMaterial = await webcrypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(key),
+    new TextEncoder().encode(ENCRYPTION_KEY),
     { name: 'PBKDF2' },
     false,
     ['deriveKey']
@@ -112,13 +115,10 @@ export async function POST(request: Request) {
     )
 
     // Encrypt sensitive response data
-    const encryptedResponse = await encryptResponse(
-      {
-        user,
-        token
-      },
-      process.env.JWT_SECRET || 'fallback-secret-key'
-    )
+    const encryptedResponse = await encryptResponse({
+      user,
+      token
+    })
 
     return NextResponse.json(encryptedResponse)
   } catch (error) {
