@@ -3,8 +3,9 @@ const { parse } = require('url');
 const next = require('next');
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = process.env.WEBSITE_HOSTNAME || 'localhost';
-const port = process.env.PORT || 3000;
+// Azure Web App expects port 8080 for Linux containers
+const port = process.env.PORT || 8080;
+const hostname = '0.0.0.0';
 
 console.log('Starting Next.js app...');
 console.log(`Environment: ${dev ? 'development' : 'production'}`);
@@ -30,7 +31,7 @@ app.prepare()
         res.end('Internal Server Error');
       }
     })
-    .listen(port, (err) => {
+    .listen(port, hostname, (err) => {
       if (err) {
         console.error('Failed to start server:', err);
         throw err;
