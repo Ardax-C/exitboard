@@ -8,22 +8,30 @@ export async function POST(request: Request) {
   try {
     const { email, password } = await request.json()
 
-    // Validate input
+    // Validate input without revealing which field is missing
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
+        { error: 'Invalid credentials' },
+        { status: 401 }
       )
     }
 
-    // Find user
+    // Find user - don't log email attempts
     const user = await prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        password: true,
+        name: true,
+        email: true,
+        company: true,
+        title: true
+      }
     })
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: 'Invalid credentials' },
         { status: 401 }
       )
     }
@@ -33,7 +41,7 @@ export async function POST(request: Request) {
 
     if (!isValidPassword) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: 'Invalid credentials' },
         { status: 401 }
       )
     }
@@ -53,15 +61,16 @@ export async function POST(request: Request) {
       token,
     })
   } catch (error) {
-    console.error('Signin error:', error)
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 401 }
-      )
+    // Don't expose internal errors
+    if (error instanceof Error) {
+      console.error('Signin error:', {
+        name: error.name,
+        // Don't log the full error message as it might contain sensitive data
+      })
     }
+    
     return NextResponse.json(
-      { error: 'Database error occurred during signin' },
+      { error: 'Authentication failed' },
       { status: 500 }
     )
   }

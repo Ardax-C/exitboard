@@ -8,22 +8,23 @@ export async function POST(request: Request) {
   try {
     const { name, email, password, company } = await request.json()
 
-    // Validate input
+    // Validate input without revealing specific missing fields
     if (!name || !email || !password) {
       return NextResponse.json(
-        { error: 'Name, email, and password are required' },
+        { error: 'Missing required information' },
         { status: 400 }
       )
     }
 
-    // Check if user already exists
+    // Check if user already exists - don't reveal if the email exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
+      select: { id: true }
     })
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
+        { error: 'Unable to create account' },
         { status: 400 }
       )
     }
@@ -39,6 +40,13 @@ export async function POST(request: Request) {
         password: hashedPassword,
         company,
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        company: true,
+        title: true,
+      }
     })
 
     // Generate JWT
@@ -48,23 +56,22 @@ export async function POST(request: Request) {
       { expiresIn: '7d' }
     )
 
-    // Return user data (excluding password) and token
-    const { password: _, ...userWithoutPassword } = user
-
     return NextResponse.json({
-      user: userWithoutPassword,
+      user,
       token,
     })
   } catch (error) {
-    console.error('Signup error:', error)
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 400 }
-      )
+    // Don't expose internal errors
+    if (error instanceof Error) {
+      console.error('Signup error:', {
+        name: error.name,
+        // Don't log the full error message as it might contain sensitive data
+      })
     }
+
+    // Generic error message that doesn't reveal system details
     return NextResponse.json(
-      { error: 'Database error occurred during signup' },
+      { error: 'Unable to create account' },
       { status: 500 }
     )
   }
