@@ -15,6 +15,54 @@ interface AuthState {
   loading: boolean
 }
 
+// Decryption helper function
+async function decryptResponse(encrypted: string, iv: string, authTag: string, key: string) {
+  // Convert base64 to ArrayBuffer
+  function base64ToArrayBuffer(base64: string) {
+    const binaryString = window.atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
+  // Derive key using PBKDF2
+  const keyMaterial = await window.crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(key),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
+
+  const derivedKey = await window.crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: new TextEncoder().encode('exitboard-salt'),
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+
+  // Decrypt the data
+  const decrypted = await window.crypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv: base64ToArrayBuffer(iv),
+      additionalData: base64ToArrayBuffer(authTag)
+    },
+    derivedKey,
+    base64ToArrayBuffer(encrypted)
+  );
+
+  return JSON.parse(new TextDecoder().decode(decrypted));
+}
+
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -69,7 +117,13 @@ export async function signIn(data: { email: string; password: string }) {
     throw new Error(error.error || 'Failed to sign in')
   }
 
-  return response.json()
+  const { encrypted, iv, authTag } = await response.json()
+  return decryptResponse(
+    encrypted,
+    iv,
+    authTag,
+    localStorage.getItem('jwt_secret') || 'fallback-secret-key'
+  )
 }
 
 export async function signUp(data: {
@@ -91,7 +145,13 @@ export async function signUp(data: {
     throw new Error(error.error || 'Failed to sign up')
   }
 
-  return response.json()
+  const { encrypted, iv, authTag } = await response.json()
+  return decryptResponse(
+    encrypted,
+    iv,
+    authTag,
+    localStorage.getItem('jwt_secret') || 'fallback-secret-key'
+  )
 }
 
 export function setAuthToken(token: string) {
