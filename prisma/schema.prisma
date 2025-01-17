@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String
+  company       String?
+  title         String?
+  jobPostings   JobPosting[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model JobPosting {
+  id                    String    @id @default(cuid())
+  title                 String
+  company               String
+  companyDescription    String?
+  companyWebsite        String?
+  companySize           String?
+  companyIndustry       String?
+  location              String
+  type                  JobType
+  level                 JobLevel
+  employmentType        EmploymentType?
+  workplaceType         WorkplaceType?
+  description           String
+  responsibilities      String[]
+  requirements         String[]
+  preferredQualifications String[]
+  skills               String[]
+  benefits             String[]
+  salary               Salary?
+  applicationDeadline   DateTime?
+  startDate            DateTime?
+  contactEmail         String
+  contactPhone         String?
+  applicationUrl       String?
+  applicationInstructions String?
+  author               User      @relation(fields: [authorId], references: [id])
+  authorId             String
+  status               PostingStatus @default(ACTIVE)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model Salary {
+  id            String     @id @default(cuid())
+  min           Float
+  max           Float
+  currency      String     @default("USD")
+  period        SalaryPeriod
+  isNegotiable  Boolean    @default(false)
+  jobPosting    JobPosting @relation(fields: [jobPostingId], references: [id])
+  jobPostingId  String     @unique
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  REMOTE
+}
+
+enum JobLevel {
+  ENTRY
+  JUNIOR
+  MID
+  SENIOR
+  LEAD
+  EXECUTIVE
+}
+
+enum EmploymentType {
+  PERMANENT
+  TEMPORARY
+  SEASONAL
+  CONTRACT
+}
+
+enum WorkplaceType {
+  ON_SITE
+  HYBRID
+  REMOTE
+}
+
+enum PostingStatus {
+  ACTIVE
+  CLOSED
+  DRAFT
+}
+
+enum SalaryPeriod {
+  HOUR
+  WEEK
+  MONTH
+  YEAR
+}
