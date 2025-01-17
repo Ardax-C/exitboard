@@ -8,6 +8,49 @@ import { webcrypto } from 'crypto'
 // Use a constant key for encryption/decryption
 const ENCRYPTION_KEY = 'exitboard-encryption-key-2024'
 
+// Helper function to convert base64 to Uint8Array
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = Buffer.from(base64, 'base64');
+  return new Uint8Array(binaryString);
+}
+
+// Decryption helper function for requests
+async function decryptRequest(encrypted: { encrypted: string; iv: string }): Promise<string> {
+  // Derive key using PBKDF2
+  const keyMaterial = await webcrypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(ENCRYPTION_KEY),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
+
+  const derivedKey = await webcrypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: new TextEncoder().encode('exitboard-salt'),
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+
+  // Decrypt the data
+  const decrypted = await webcrypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv: base64ToUint8Array(encrypted.iv)
+    },
+    derivedKey,
+    base64ToUint8Array(encrypted.encrypted)
+  );
+
+  return new TextDecoder().decode(decrypted);
+}
+
 // Encryption helper function
 async function encryptResponse(data: any) {
   // Convert string to Uint8Array
@@ -67,12 +110,15 @@ export async function POST(request: Request) {
     const { name, email, password, company } = await request.json()
 
     // Validate input without revealing specific missing fields
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !password.encrypted || !password.iv) {
       return NextResponse.json(
         { error: 'Missing required information' },
         { status: 400 }
       )
     }
+
+    // Decrypt password
+    const decryptedPassword = await decryptRequest(password)
 
     // Check if user already exists - don't reveal if the email exists
     const existingUser = await prisma.user.findUnique({
@@ -88,7 +134,7 @@ export async function POST(request: Request) {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(decryptedPassword, 10)
 
     // Create user
     const user = await prisma.user.create({
