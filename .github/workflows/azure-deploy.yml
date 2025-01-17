@@ -33,12 +33,11 @@ jobs:
 
       - name: Create deployment package
         run: |
-          npm install
-          npm run build
           mkdir deployment
-          cp -r .next node_modules package.json package-lock.json next.config.js deployment/
+          cp -r .next package.json package-lock.json next.config.js prisma deployment/
           if [ -d "public" ]; then cp -r public deployment/; fi
           cd deployment
+          npm ci --only=production
           zip -r ../release.zip ./*
 
       - name: Upload artifact for deployment job
