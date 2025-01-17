@@ -2,17 +2,11 @@ const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
 const { PrismaClient } = require('@prisma/client');
-const fs = require('fs');
-const path = require('path');
 
-// Setup logging
+// Setup logging that Azure can capture
 function log(message) {
   const timestamp = new Date().toISOString();
-  const logMessage = `${timestamp} - ${message}\n`;
-  console.log(logMessage);
-  
-  // Also write to a file that Azure can collect
-  fs.appendFileSync('/home/LogFiles/application.log', logMessage);
+  process.stdout.write(`${timestamp} - ${message}\n`);
 }
 
 const dev = process.env.NODE_ENV !== 'production';
@@ -29,44 +23,46 @@ const prisma = new PrismaClient({
   ],
 });
 
-log(`Starting server with configuration:
-- Environment: ${process.env.NODE_ENV}
-- Hostname: ${hostname}
-- Port: ${port}
-- Database URL: ${process.env.DATABASE_URL ? 'Set' : 'Not set'}
-- Database URL length: ${process.env.DATABASE_URL ? process.env.DATABASE_URL.length : 0}
-- JWT Secret: ${process.env.JWT_SECRET ? 'Set' : 'Not set'}
-- API URL: ${process.env.NEXT_PUBLIC_API_URL}
-`);
+// Log startup configuration
+process.stdout.write('================== SERVER STARTUP ==================\n');
+process.stdout.write(`Environment: ${process.env.NODE_ENV}\n`);
+process.stdout.write(`Hostname: ${hostname}\n`);
+process.stdout.write(`Port: ${port}\n`);
+process.stdout.write(`Database URL set: ${process.env.DATABASE_URL ? 'Yes' : 'No'}\n`);
+process.stdout.write(`Database URL length: ${process.env.DATABASE_URL ? process.env.DATABASE_URL.length : 0}\n`);
+process.stdout.write(`JWT Secret set: ${process.env.JWT_SECRET ? 'Yes' : 'No'}\n`);
+process.stdout.write(`API URL: ${process.env.NEXT_PUBLIC_API_URL}\n`);
+process.stdout.write('================================================\n');
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 async function checkDatabaseConnection() {
   try {
-    log('Attempting database connection...');
+    process.stdout.write('Attempting database connection...\n');
     await prisma.$connect();
-    log('Database connection successful');
+    process.stdout.write('Database connection successful\n');
     
     // Test query to verify full connectivity
     const result = await prisma.$queryRaw`SELECT version(), current_database(), current_schema()`;
-    log('Database info: ' + JSON.stringify(result));
+    process.stdout.write(`Database info: ${JSON.stringify(result)}\n`);
     
     return true;
   } catch (error) {
-    log('Database connection error details:');
-    log('Error name: ' + error.name);
-    log('Error message: ' + error.message);
-    if (error.code) log('Error code: ' + error.code);
-    if (error.meta) log('Error metadata: ' + JSON.stringify(error.meta));
-    log('Full error: ' + JSON.stringify(error));
+    process.stdout.write('================== DATABASE ERROR ==================\n');
+    process.stdout.write(`Error name: ${error.name}\n`);
+    process.stdout.write(`Error message: ${error.message}\n`);
+    if (error.code) process.stdout.write(`Error code: ${error.code}\n`);
+    if (error.meta) process.stdout.write(`Error metadata: ${JSON.stringify(error.meta)}\n`);
+    process.stdout.write(`Full error: ${JSON.stringify(error)}\n`);
+    process.stdout.write('================================================\n');
     return false;
   }
 }
 
 app.prepare()
   .then(async () => {
-    log('Next.js app prepared, checking database connection...');
+    process.stdout.write('Next.js app prepared, checking database connection...\n');
     
     // Check database connection before starting server
     const isDatabaseConnected = await checkDatabaseConnection();
@@ -74,21 +70,21 @@ app.prepare()
       throw new Error('Failed to connect to database - check logs above for details');
     }
 
-    log('Creating HTTP server...');
+    process.stdout.write('Creating HTTP server...\n');
     
     const server = createServer(async (req, res) => {
       try {
         const parsedUrl = parse(req.url, true);
         const startTime = Date.now();
         
-        log(`${req.method} ${req.url}`);
+        process.stdout.write(`${new Date().toISOString()} - ${req.method} ${req.url}\n`);
         
         await handle(req, res, parsedUrl);
         
         const duration = Date.now() - startTime;
-        log(`${req.method} ${req.url} completed in ${duration}ms`);
+        process.stdout.write(`${new Date().toISOString()} - ${req.method} ${req.url} completed in ${duration}ms\n`);
       } catch (err) {
-        log('Error handling request: ' + err.message);
+        process.stdout.write(`Error handling request: ${err.message}\n`);
         res.statusCode = 500;
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ 
@@ -104,7 +100,7 @@ app.prepare()
 
     server.listen(port, hostname, (err) => {
       if (err) throw err;
-      log(`> Ready on http://${hostname}:${port}`);
+      process.stdout.write(`> Ready on http://${hostname}:${port}\n`);
       
       // Send ready signal to Azure
       if (process.send) {
@@ -114,30 +110,30 @@ app.prepare()
 
     // Handle shutdown gracefully
     process.on('SIGTERM', async () => {
-      log('SIGTERM received, shutting down...');
+      process.stdout.write('SIGTERM received, shutting down...\n');
       
       try {
         // Disconnect Prisma
         await prisma.$disconnect();
-        log('Database connection closed');
+        process.stdout.write('Database connection closed\n');
         
         server.close(() => {
-          log('Server closed');
+          process.stdout.write('Server closed\n');
           process.exit(0);
         });
       } catch (error) {
-        log('Error during shutdown: ' + error.message);
+        process.stdout.write(`Error during shutdown: ${error.message}\n`);
         process.exit(1);
       }
       
       // Force exit if server doesn't close in 10 seconds
       setTimeout(() => {
-        log('Could not close server gracefully, forcing shutdown');
+        process.stdout.write('Could not close server gracefully, forcing shutdown\n');
         process.exit(1);
       }, 10000);
     });
   })
   .catch((err) => {
-    log('Error during app preparation: ' + err.message);
+    process.stdout.write(`Error during app preparation: ${err.message}\n`);
     process.exit(1);
   }); 
