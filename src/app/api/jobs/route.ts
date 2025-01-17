@@ -98,35 +98,11 @@ export async function POST(request: Request) {
       )
     }
 
-    const {
-      title,
-      company,
-      companyDescription,
-      companyWebsite,
-      companySize,
-      companyIndustry,
-      location,
-      type,
-      level,
-      employmentType,
-      workplaceType,
-      description,
-      responsibilities,
-      requirements,
-      preferredQualifications,
-      skills,
-      benefits,
-      salary,
-      applicationDeadline,
-      startDate,
-      contactEmail,
-      contactPhone,
-      applicationUrl,
-      applicationInstructions,
-    } = await request.json()
+    const data = await request.json()
 
     // Validate required fields
-    if (!title || !company || !location || !type || !level || !description || !contactEmail) {
+    if (!data.title || !data.company || !data.location || !data.type || 
+        !data.level || !data.description || !data.contactEmail) {
       return NextResponse.json(
         { error: 'Missing required fields: title, company, location, type, level, description, and contactEmail are required' },
         { status: 400 }
@@ -134,7 +110,7 @@ export async function POST(request: Request) {
     }
 
     // Validate job type
-    if (!isValidJobType(type)) {
+    if (!isValidJobType(data.type)) {
       return NextResponse.json(
         { error: `Invalid job type. Must be one of: ${Object.values(JobType).join(', ')}` },
         { status: 400 }
@@ -142,7 +118,7 @@ export async function POST(request: Request) {
     }
 
     // Validate job level
-    if (!isValidJobLevel(level)) {
+    if (!isValidJobLevel(data.level)) {
       return NextResponse.json(
         { error: `Invalid job level. Must be one of: ${Object.values(JobLevel).join(', ')}` },
         { status: 400 }
@@ -150,7 +126,7 @@ export async function POST(request: Request) {
     }
 
     // Validate employment type if provided
-    if (employmentType && !isValidEmploymentType(employmentType)) {
+    if (data.employmentType && !isValidEmploymentType(data.employmentType)) {
       return NextResponse.json(
         { error: `Invalid employment type. Must be one of: ${Object.values(EmploymentType).join(', ')}` },
         { status: 400 }
@@ -158,7 +134,7 @@ export async function POST(request: Request) {
     }
 
     // Validate workplace type if provided
-    if (workplaceType && !isValidWorkplaceType(workplaceType)) {
+    if (data.workplaceType && !isValidWorkplaceType(data.workplaceType)) {
       return NextResponse.json(
         { error: `Invalid workplace type. Must be one of: ${Object.values(WorkplaceType).join(', ')}` },
         { status: 400 }
@@ -166,45 +142,38 @@ export async function POST(request: Request) {
     }
 
     // Validate salary if provided
-    if (salary) {
-      if (!salary.min || !salary.max || !salary.currency || !salary.period) {
+    if (data.salary) {
+      if (!data.salary.min || !data.salary.max || !data.salary.currency || !data.salary.period) {
         return NextResponse.json(
           { error: 'Salary must include min, max, currency, and period' },
           { status: 400 }
         )
       }
 
-      if (isNaN(parseFloat(salary.min)) || isNaN(parseFloat(salary.max))) {
+      if (isNaN(parseFloat(data.salary.min)) || isNaN(parseFloat(data.salary.max))) {
         return NextResponse.json(
           { error: 'Salary min and max must be valid numbers' },
           { status: 400 }
         )
       }
 
-      if (!isValidSalaryPeriod(salary.period)) {
+      if (!isValidSalaryPeriod(data.salary.period)) {
         return NextResponse.json(
           { error: `Invalid salary period. Must be one of: ${Object.values(SalaryPeriod).join(', ')}` },
           { status: 400 }
         )
       }
+
+      if (parseFloat(data.salary.min) <= 0 || parseFloat(data.salary.max) <= 0 || 
+          parseFloat(data.salary.min) > parseFloat(data.salary.max)) {
+        return NextResponse.json(
+          { error: 'Invalid salary range. Min must be greater than 0 and less than or equal to max.' },
+          { status: 400 }
+        )
+      }
     }
 
-    // Validate dates if provided
-    if (applicationDeadline && isNaN(Date.parse(applicationDeadline))) {
-      return NextResponse.json(
-        { error: 'Invalid application deadline date' },
-        { status: 400 }
-      )
-    }
-
-    if (startDate && isNaN(Date.parse(startDate))) {
-      return NextResponse.json(
-        { error: 'Invalid start date' },
-        { status: 400 }
-      )
-    }
-
-    // Ensure arrays are properly formatted
+    // Format arrays properly
     const formatArray = (input: string | string[] | undefined): string[] => {
       if (!input) return []
       if (Array.isArray(input)) return input.filter(Boolean)
@@ -214,38 +183,39 @@ export async function POST(request: Request) {
     // Create job posting with all fields
     const jobPosting = await prisma.jobPosting.create({
       data: {
-        title,
-        company,
-        companyDescription,
-        companyWebsite,
-        companySize,
-        companyIndustry,
-        location,
-        type,
-        level,
-        employmentType,
-        workplaceType,
-        description,
-        responsibilities: formatArray(responsibilities),
-        requirements: formatArray(requirements),
-        preferredQualifications: formatArray(preferredQualifications),
-        skills: formatArray(skills),
-        benefits: formatArray(benefits),
-        applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : undefined,
-        startDate: startDate ? new Date(startDate) : undefined,
-        contactEmail,
-        contactPhone,
-        applicationUrl,
-        applicationInstructions,
+        title: data.title,
+        company: data.company,
+        companyDescription: data.companyDescription,
+        companyWebsite: data.companyWebsite,
+        companySize: data.companySize,
+        companyIndustry: data.companyIndustry,
+        location: data.location,
+        type: data.type as JobType,
+        level: data.level as JobLevel,
+        employmentType: data.employmentType as EmploymentType,
+        workplaceType: data.workplaceType as WorkplaceType,
+        description: data.description,
+        responsibilities: formatArray(data.responsibilities),
+        requirements: formatArray(data.requirements),
+        preferredQualifications: formatArray(data.preferredQualifications),
+        skills: formatArray(data.skills),
+        benefits: formatArray(data.benefits),
+        applicationDeadline: data.applicationDeadline ? new Date(data.applicationDeadline) : undefined,
+        startDate: data.startDate ? new Date(data.startDate) : undefined,
+        contactEmail: data.contactEmail,
+        contactPhone: data.contactPhone,
+        applicationUrl: data.applicationUrl,
+        applicationInstructions: data.applicationInstructions,
         authorId: payload.userId,
-        ...(salary && {
+        status: 'ACTIVE',
+        ...(data.salary && {
           salary: {
             create: {
-              min: parseFloat(salary.min),
-              max: parseFloat(salary.max),
-              currency: salary.currency,
-              period: salary.period,
-              isNegotiable: salary.isNegotiable,
+              min: parseFloat(data.salary.min),
+              max: parseFloat(data.salary.max),
+              currency: data.salary.currency,
+              period: data.salary.period as SalaryPeriod,
+              isNegotiable: data.salary.isNegotiable ?? false,
             },
           },
         }),

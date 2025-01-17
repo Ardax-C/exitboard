@@ -89,8 +89,24 @@ export default function JobPostingForm({
       benefits: formData.benefits.split('\n').filter(Boolean),
       salary: {
         ...formData.salary,
-        min: parseFloat(formData.salary.min as string),
-        max: parseFloat(formData.salary.max as string)
+        min: formData.salary.min ? parseFloat(formData.salary.min as string) : 0,
+        max: formData.salary.max ? parseFloat(formData.salary.max as string) : 0
+      },
+      status: 'ACTIVE'
+    }
+
+    // Validate required fields
+    if (!processedData.title || !processedData.company || !processedData.location || 
+        !processedData.type || !processedData.level || !processedData.description || 
+        !processedData.contactEmail) {
+      return
+    }
+
+    // Validate salary if provided
+    if (processedData.salary.min || processedData.salary.max) {
+      if (processedData.salary.min <= 0 || processedData.salary.max <= 0 || 
+          processedData.salary.min > processedData.salary.max) {
+        return
       }
     }
 
