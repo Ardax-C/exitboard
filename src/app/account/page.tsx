@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/contexts/UserContext'
-import { deleteAccount } from '@/lib/auth'
+import { deleteAccount, updateProfile, removeAuthToken } from '@/lib/auth'
 import { getMyJobPostings, deleteJobPosting, JobPosting } from '@/lib/jobs'
 import Link from 'next/link'
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PencilIcon, TrashIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 export default function AccountPage() {
   const router = useRouter()
@@ -16,6 +16,26 @@ export default function AccountPage() {
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
   const [jobsLoading, setJobsLoading] = useState(true)
   const [jobsError, setJobsError] = useState('')
+  const [isEditing, setIsEditing] = useState(false)
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: '',
+    company: '',
+    title: '',
+  })
+  const [profileError, setProfileError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        email: user.email,
+        company: user.company || '',
+        title: user.title || '',
+      })
+    }
+  }, [user])
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -59,6 +79,7 @@ export default function AccountPage() {
       setIsDeleting(true)
       setError('')
       await deleteAccount()
+      removeAuthToken()
       setUser(null)
       router.push('/')
     } catch (error) {
@@ -83,6 +104,21 @@ export default function AccountPage() {
     }
   }
 
+  const handleSaveProfile = async () => {
+    try {
+      setIsSaving(true)
+      setProfileError('')
+      const updatedUser = await updateProfile(profileData)
+      setUser(updatedUser)
+      setIsEditing(false)
+    } catch (error) {
+      console.error('Failed to update profile:', error)
+      setProfileError(error instanceof Error ? error.message : 'Failed to update profile')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Header */}
@@ -95,23 +131,105 @@ export default function AccountPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Account Information */}
         <div className="bg-gray-800/50 rounded-lg shadow px-5 py-6 sm:px-6">
-          <h2 className="text-lg font-medium text-white mb-4">Account Information</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium text-white">Account Information</h2>
+            {!isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <PencilIcon className="h-4 w-4 mr-2" />
+                Edit Profile
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={isSaving}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                >
+                  <CheckIcon className="h-4 w-4 mr-2" />
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditing(false)
+                    setProfileData({
+                      name: user.name || '',
+                      email: user.email,
+                      company: user.company || '',
+                      title: user.title || '',
+                    })
+                  }}
+                  className="inline-flex items-center px-3 py-2 border border-gray-600 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                >
+                  <XMarkIcon className="h-4 w-4 mr-2" />
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+
+          {profileError && (
+            <div className="rounded-md bg-red-500/10 p-4 mb-4">
+              <p className="text-sm text-red-400">{profileError}</p>
+            </div>
+          )}
+
           <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div className="bg-gray-700/50 px-4 py-5 sm:px-6 rounded-lg">
               <dt className="text-sm font-medium text-gray-400">Name</dt>
-              <dd className="mt-1 text-lg text-white">{user.name || 'Not set'}</dd>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={profileData.name}
+                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-0 bg-gray-600 py-2 px-3 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              ) : (
+                <dd className="mt-1 text-lg text-white">{user.name || 'Not set'}</dd>
+              )}
             </div>
             <div className="bg-gray-700/50 px-4 py-5 sm:px-6 rounded-lg">
               <dt className="text-sm font-medium text-gray-400">Email</dt>
-              <dd className="mt-1 text-lg text-white">{user.email}</dd>
+              {isEditing ? (
+                <input
+                  type="email"
+                  value={profileData.email}
+                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-0 bg-gray-600 py-2 px-3 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              ) : (
+                <dd className="mt-1 text-lg text-white">{user.email}</dd>
+              )}
             </div>
             <div className="bg-gray-700/50 px-4 py-5 sm:px-6 rounded-lg">
               <dt className="text-sm font-medium text-gray-400">Company</dt>
-              <dd className="mt-1 text-lg text-white">{user.company || 'Not set'}</dd>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={profileData.company}
+                  onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-0 bg-gray-600 py-2 px-3 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+                />
+              ) : (
+                <dd className="mt-1 text-lg text-white">{user.company || 'Not set'}</dd>
+              )}
             </div>
             <div className="bg-gray-700/50 px-4 py-5 sm:px-6 rounded-lg">
               <dt className="text-sm font-medium text-gray-400">Title</dt>
-              <dd className="mt-1 text-lg text-white">{user.title || 'Not set'}</dd>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={profileData.title}
+                  onChange={(e) => setProfileData({ ...profileData, title: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-0 bg-gray-600 py-2 px-3 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+                />
+              ) : (
+                <dd className="mt-1 text-lg text-white">{user.title || 'Not set'}</dd>
+              )}
             </div>
           </dl>
         </div>

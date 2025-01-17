@@ -301,4 +301,34 @@ export async function deleteAccount(): Promise<void> {
   }
 
   localStorage.removeItem('token')
+}
+
+interface UpdateProfileData {
+  name: string
+  email: string
+  company?: string
+  title?: string
+}
+
+export async function updateProfile(data: UpdateProfileData): Promise<User> {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Not authenticated')
+  }
+
+  const response = await fetch('/api/users/profile', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to update profile')
+  }
+
+  return response.json()
 } 
