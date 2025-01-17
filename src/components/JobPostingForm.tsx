@@ -206,7 +206,6 @@ export default function JobPostingForm({
               <option value="PART_TIME">Part Time</option>
               <option value="CONTRACT">Contract</option>
               <option value="INTERNSHIP">Internship</option>
-              <option value="REMOTE">Remote</option>
             </select>
           </div>
 
