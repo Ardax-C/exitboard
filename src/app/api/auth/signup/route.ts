@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-
-const prisma = new PrismaClient()
+import { Prisma } from '@prisma/client'
+import prisma from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
@@ -58,8 +57,14 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error('Signup error:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'User with this email already exists' },
+        { status: 400 }
+      )
+    }
     return NextResponse.json(
-      { error: 'Something went wrong' },
+      { error: 'Database error occurred during signup' },
       { status: 500 }
     )
   }

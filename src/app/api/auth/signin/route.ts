@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-
-const prisma = new PrismaClient()
+import { Prisma } from '@prisma/client'
+import prisma from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
@@ -55,8 +54,14 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error('Signin error:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 401 }
+      )
+    }
     return NextResponse.json(
-      { error: 'Something went wrong' },
+      { error: 'Database error occurred during signin' },
       { status: 500 }
     )
   }
