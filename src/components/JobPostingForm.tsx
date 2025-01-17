@@ -79,6 +79,7 @@ export default function JobPostingForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Form submission started')
     
     const processedData = {
       ...formData,
@@ -95,21 +96,38 @@ export default function JobPostingForm({
       status: 'ACTIVE'
     }
 
+    console.log('Processed form data:', processedData)
+
     // Validate required fields
     if (!processedData.title || !processedData.company || !processedData.location || 
         !processedData.type || !processedData.level || !processedData.description || 
         !processedData.contactEmail) {
+      console.error('Missing required fields:', {
+        title: !processedData.title,
+        company: !processedData.company,
+        location: !processedData.location,
+        type: !processedData.type,
+        level: !processedData.level,
+        description: !processedData.description,
+        contactEmail: !processedData.contactEmail
+      })
       return
     }
 
     // Validate salary if provided
     if (processedData.salary.min || processedData.salary.max) {
+      console.log('Validating salary:', processedData.salary)
       if (processedData.salary.min <= 0 || processedData.salary.max <= 0 || 
           processedData.salary.min > processedData.salary.max) {
+        console.error('Invalid salary range:', {
+          min: processedData.salary.min,
+          max: processedData.salary.max
+        })
         return
       }
     }
 
+    console.log('Form validation passed, submitting data')
     onSubmit(processedData)
   }
 

@@ -80,8 +80,10 @@ export async function GET(request: Request) {
 // Create a new job posting
 export async function POST(request: Request) {
   try {
+    console.log('Job posting request received')
     const authHeader = request.headers.get('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
+      console.error('Missing or invalid authorization header')
       return NextResponse.json(
         { error: 'Missing or invalid authorization header' },
         { status: 401 }
@@ -92,6 +94,7 @@ export async function POST(request: Request) {
     const payload = await verifyToken(token)
 
     if (!payload || typeof payload.userId !== 'string') {
+      console.error('Invalid token payload:', payload)
       return NextResponse.json(
         { error: 'Invalid token' },
         { status: 401 }
@@ -99,10 +102,26 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json()
+    console.log('Received job posting data:', {
+      ...data,
+      // Exclude sensitive fields from logging
+      authorId: undefined,
+      contactEmail: undefined,
+      contactPhone: undefined
+    })
 
     // Validate required fields
     if (!data.title || !data.company || !data.location || !data.type || 
         !data.level || !data.description || !data.contactEmail) {
+      console.error('Missing required fields:', {
+        title: !data.title,
+        company: !data.company,
+        location: !data.location,
+        type: !data.type,
+        level: !data.level,
+        description: !data.description,
+        contactEmail: !data.contactEmail
+      })
       return NextResponse.json(
         { error: 'Missing required fields: title, company, location, type, level, description, and contactEmail are required' },
         { status: 400 }
@@ -111,6 +130,7 @@ export async function POST(request: Request) {
 
     // Validate job type
     if (!isValidJobType(data.type)) {
+      console.error('Invalid job type:', data.type)
       return NextResponse.json(
         { error: `Invalid job type. Must be one of: ${Object.values(JobType).join(', ')}` },
         { status: 400 }
@@ -119,6 +139,7 @@ export async function POST(request: Request) {
 
     // Validate job level
     if (!isValidJobLevel(data.level)) {
+      console.error('Invalid job level:', data.level)
       return NextResponse.json(
         { error: `Invalid job level. Must be one of: ${Object.values(JobLevel).join(', ')}` },
         { status: 400 }
@@ -127,6 +148,7 @@ export async function POST(request: Request) {
 
     // Validate employment type if provided
     if (data.employmentType && !isValidEmploymentType(data.employmentType)) {
+      console.error('Invalid employment type:', data.employmentType)
       return NextResponse.json(
         { error: `Invalid employment type. Must be one of: ${Object.values(EmploymentType).join(', ')}` },
         { status: 400 }
@@ -135,6 +157,7 @@ export async function POST(request: Request) {
 
     // Validate workplace type if provided
     if (data.workplaceType && !isValidWorkplaceType(data.workplaceType)) {
+      console.error('Invalid workplace type:', data.workplaceType)
       return NextResponse.json(
         { error: `Invalid workplace type. Must be one of: ${Object.values(WorkplaceType).join(', ')}` },
         { status: 400 }
@@ -143,7 +166,9 @@ export async function POST(request: Request) {
 
     // Validate salary if provided
     if (data.salary) {
+      console.log('Validating salary data:', data.salary)
       if (!data.salary.min || !data.salary.max || !data.salary.currency || !data.salary.period) {
+        console.error('Missing required salary fields')
         return NextResponse.json(
           { error: 'Salary must include min, max, currency, and period' },
           { status: 400 }
@@ -151,6 +176,10 @@ export async function POST(request: Request) {
       }
 
       if (isNaN(parseFloat(data.salary.min)) || isNaN(parseFloat(data.salary.max))) {
+        console.error('Invalid salary numbers:', {
+          min: data.salary.min,
+          max: data.salary.max
+        })
         return NextResponse.json(
           { error: 'Salary min and max must be valid numbers' },
           { status: 400 }
@@ -158,6 +187,7 @@ export async function POST(request: Request) {
       }
 
       if (!isValidSalaryPeriod(data.salary.period)) {
+        console.error('Invalid salary period:', data.salary.period)
         return NextResponse.json(
           { error: `Invalid salary period. Must be one of: ${Object.values(SalaryPeriod).join(', ')}` },
           { status: 400 }
@@ -166,6 +196,10 @@ export async function POST(request: Request) {
 
       if (parseFloat(data.salary.min) <= 0 || parseFloat(data.salary.max) <= 0 || 
           parseFloat(data.salary.min) > parseFloat(data.salary.max)) {
+        console.error('Invalid salary range:', {
+          min: parseFloat(data.salary.min),
+          max: parseFloat(data.salary.max)
+        })
         return NextResponse.json(
           { error: 'Invalid salary range. Min must be greater than 0 and less than or equal to max.' },
           { status: 400 }
@@ -180,6 +214,7 @@ export async function POST(request: Request) {
       return input.split('\n').filter(Boolean)
     }
 
+    console.log('Creating job posting in database')
     // Create job posting with all fields
     const jobPosting = await prisma.jobPosting.create({
       data: {
@@ -231,10 +266,16 @@ export async function POST(request: Request) {
       },
     })
 
+    console.log('Job posting created successfully:', {
+      id: jobPosting.id,
+      title: jobPosting.title,
+      company: jobPosting.company
+    })
     return NextResponse.json(jobPosting)
   } catch (error) {
     console.error('Create job posting error:', error)
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error('Prisma error code:', error.code)
       if (error.code === 'P2002') {
         return NextResponse.json(
           { error: 'A job posting with these details already exists' },
