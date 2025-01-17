@@ -32,20 +32,18 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
-      - name: Create deployment package
-        run: |
-          rm -rf deployment
-          mkdir deployment
-          cp -r .next package.json package-lock.json next.config.js prisma node_modules deployment/
-          if [ -d "public" ]; then cp -r public deployment/; fi
-          cd deployment
-          zip -r ../release.zip ./*
-
-      - name: Upload artifact for deployment job
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: node-app
-          path: release.zip
+          name: build-artifacts
+          path: |
+            .next
+            node_modules
+            package.json
+            package-lock.json
+            next.config.js
+            prisma
+            public
 
   deploy:
     runs-on: ubuntu-latest
@@ -55,13 +53,11 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Download artifact from build job
+      - name: Download build artifacts
         uses: actions/download-artifact@v3
         with:
-          name: node-app
-
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
+          name: build-artifacts
+          path: .
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
