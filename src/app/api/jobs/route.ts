@@ -25,6 +25,11 @@ function isValidWorkplaceType(type: string | undefined): type is WorkplaceType {
 
 // Validate salary period
 function isValidSalaryPeriod(period: string): period is SalaryPeriod {
+  console.log('Validating salary period:', {
+    period,
+    validPeriods: Object.values(SalaryPeriod),
+    isValid: Object.values(SalaryPeriod).includes(period as SalaryPeriod)
+  })
   return Object.values(SalaryPeriod).includes(period as SalaryPeriod)
 }
 
@@ -166,7 +171,10 @@ export async function POST(request: Request) {
 
     // Validate salary if provided
     if (data.salary) {
-      console.log('Validating salary data:', data.salary)
+      console.log('Validating salary data:', {
+        ...data.salary,
+        periodValid: isValidSalaryPeriod(data.salary.period)
+      })
       if (!data.salary.min || !data.salary.max || !data.salary.currency || !data.salary.period) {
         console.error('Missing required salary fields')
         return NextResponse.json(
@@ -187,7 +195,10 @@ export async function POST(request: Request) {
       }
 
       if (!isValidSalaryPeriod(data.salary.period)) {
-        console.error('Invalid salary period:', data.salary.period)
+        console.error('Invalid salary period:', {
+          received: data.salary.period,
+          validValues: Object.values(SalaryPeriod)
+        })
         return NextResponse.json(
           { error: `Invalid salary period. Must be one of: ${Object.values(SalaryPeriod).join(', ')}` },
           { status: 400 }
