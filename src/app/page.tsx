@@ -50,28 +50,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        {/* Features section */}
-        <div className="mx-auto mx-w-2xl text-center">
-          <h2 className="mt-40 mb-10 text-base font-semibold leading-7 text-indigo-400">Why Choose ExitBoard</h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-white">
-            Built for Professional Excellence
-          </p>
-        </div>
-        <div className="mx-auto max-w-2xl lg:max-w-none">
-          <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-3 lg:max-w-none lg:grid-cols-3">
-            {features.map((feature) => (
-              <div key={feature.name} className="flex flex-col">
-                <dt className="text-base font-semibold leading-7 text-white">
-                  {feature.name}
-                </dt>
-                <dd className="mt-1 flex flex-auto flex-col text-base leading-6 text-gray-300">
-                  <p className="flex-auto">{feature.description}</p>
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
       </div>
 
       {/* Bottom gradient */}
