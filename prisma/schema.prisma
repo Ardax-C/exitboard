@@ -33,30 +33,30 @@ model JobPosting {
   authorId                String
   status                  PostingStatus   @default(ACTIVE)
   applicationsCount       Int             @default(0)
-  isArchived             Boolean         @default(false)
-  lastActivityAt         DateTime        @default(now())
-  createdAt              DateTime        @default(now())
-  updatedAt              DateTime        @updatedAt
+  isArchived              Boolean         @default(false)
+  lastActivityAt          DateTime        @default(now())
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
   applicationDeadline     DateTime?
   applicationInstructions String?
   applicationUrl          String?
-  benefits               String[]
-  companyDescription     String?
-  companyIndustry        String?
-  companySize            String?
-  companyWebsite         String?
-  contactPhone           String?
-  employmentType         EmploymentType?
+  benefits                String[]
+  companyDescription      String?
+  companyIndustry         String?
+  companySize             String?
+  companyWebsite          String?
+  contactPhone            String?
+  employmentType          EmploymentType?
   preferredQualifications String[]
-  responsibilities       String[]
-  skills                 String[]
-  startDate              DateTime?
-  workplaceType          WorkplaceType?
-  author                 User            @relation(fields: [authorId], references: [id])
-  salary                 Salary?
-  cancelReason           String?
-  viewsCount             Int             @default(0)
-  views                  JobView[]
+  responsibilities        String[]
+  skills                  String[]
+  startDate               DateTime?
+  workplaceType           WorkplaceType?
+  cancelReason            String?
+  viewsCount              Int             @default(0)
+  author                  User            @relation(fields: [authorId], references: [id])
+  views                   JobView[]
+  salary                  Salary?
 }
 
 model Salary {
@@ -68,6 +68,16 @@ model Salary {
   jobPostingId String       @unique
   isNegotiable Boolean      @default(false)
   jobPosting   JobPosting   @relation(fields: [jobPostingId], references: [id])
+}
+
+model JobView {
+  jobId     String
+  visitorId String
+  createdAt DateTime   @default(now())
+  job       JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, visitorId])
+  @@index([jobId])
 }
 
 enum JobType {
@@ -114,14 +124,4 @@ enum SalaryPeriod {
   MONTHLY
   YEARLY
   WEEKLY
-}
-
-model JobView {
-  jobId     String
-  visitorId String
-  createdAt DateTime @default(now())
-  job       JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
-
-  @@id([jobId, visitorId])
-  @@index([jobId])
 }
