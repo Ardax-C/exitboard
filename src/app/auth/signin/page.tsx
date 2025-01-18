@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn, setAuthToken } from '@/lib/auth'
 import { useUser } from '@/contexts/UserContext'
+import { encryptData } from '@/lib/crypto'
 
 export default function SignInPage() {
   const router = useRouter()
@@ -22,7 +23,13 @@ export default function SignInPage() {
     setLoading(true)
 
     try {
-      const { user, token } = await signIn(formData)
+      const encryptedPassword = await encryptData(formData.password)
+      
+      const { user, token } = await signIn({
+        ...formData,
+        password: encryptedPassword
+      })
+      
       if (user && token) {
         setAuthToken(token)
         setUser(user)

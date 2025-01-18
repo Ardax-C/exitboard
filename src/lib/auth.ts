@@ -89,7 +89,10 @@ export function removeAuthToken() {
   }
 }
 
-export async function signIn(data: { email: string; password: string }) {
+export async function signIn(data: { 
+  email: string; 
+  password: { encrypted: string; iv: string }; 
+}) {
   const response = await fetch('/api/auth/signin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -107,7 +110,7 @@ export async function signIn(data: { email: string; password: string }) {
 export async function signUp(data: {
   name: string;
   email: string;
-  password: string;
+  password: { encrypted: string; iv: string };
   company?: string;
 }) {
   const response = await fetch('/api/auth/signup', {

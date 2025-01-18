@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signUp, setAuthToken } from '@/lib/auth'
 import { useUser } from '@/contexts/UserContext'
+import { encryptData } from '@/lib/crypto'
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -24,12 +25,21 @@ export default function SignUpPage() {
     setLoading(true)
 
     try {
-      const { user, token } = await signUp(formData)
+      const encryptedPassword = await encryptData(formData.password)
+      
+      const { user, token } = await signUp({
+        ...formData,
+        password: encryptedPassword
+      })
+      
       setAuthToken(token)
       setUser(user)
       router.push('/jobs')
     } catch (error) {
+      console.error('Sign up error:', error)
       setError(error instanceof Error ? error.message : 'Failed to sign up')
+      setUser(null)
+      setAuthToken('')
     } finally {
       setLoading(false)
     }
