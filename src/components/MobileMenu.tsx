@@ -91,6 +91,19 @@ export default function MobileMenu({ navigation }: MobileMenuProps) {
                   <div className="px-4 py-4 space-y-3">
                     {user ? (
                       <>
+                        {user.role === 'ADMIN' && (
+                          <Link
+                            href="/admin"
+                            onClick={() => setIsOpen(false)}
+                            className={`block w-full py-3 text-center text-base ${
+                              pathname === '/admin'
+                                ? 'text-indigo-400 font-medium'
+                                : 'text-gray-300 hover:text-white'
+                            }`}
+                          >
+                            Admin
+                          </Link>
+                        )}
                         <Link
                           href="/account"
                           onClick={() => setIsOpen(false)}

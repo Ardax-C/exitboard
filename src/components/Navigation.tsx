@@ -60,6 +60,19 @@ export default function Navigation() {
             <div className="flex space-x-4">
               {user ? (
                 <>
+                  {user.role === 'ADMIN' && (
+                    <Link
+                      href="/admin"
+                      className={classNames(
+                        pathname === '/admin'
+                          ? 'bg-gray-700 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+                        'rounded-md px-3 py-2 text-sm font-medium'
+                      )}
+                    >
+                      Admin
+                    </Link>
+                  )}
                   <Link
                     href="/account"
                     className={classNames(
