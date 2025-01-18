@@ -31,15 +31,16 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Run database migrations
-        run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # Migrations are temporarily disabled
+      # - name: Run database migrations
+      #   run: npx prisma migrate deploy
+      #   env:
+      #     DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Build Next.js app
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: 'https://exitboard-hzapf7c4b9g8c0am.westus2-01.azurewebsites.net/api'
+          NEXT_PUBLIC_API_URL: 'https://exitboard.azurewebsites.net/api'
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
