@@ -44,6 +44,7 @@ export async function GET(request: Request) {
 
     const where = {
       status: 'ACTIVE' as PostingStatus,
+      isArchived: false,
       ...(type && { type }),
       ...(level && { level }),
       ...(location && { location: { contains: location, mode: 'insensitive' as const } }),

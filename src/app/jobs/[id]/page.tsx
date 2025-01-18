@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { JobPosting, getJobPosting } from '@/lib/jobs'
 import { useUser } from '@/contexts/UserContext'
 import { BuildingOfficeIcon, CalendarIcon, CurrencyDollarIcon, MapPinIcon } from '@heroicons/react/24/outline'
+import { trackJobView } from '@/lib/tracking'
 
 export default function JobPostingPage() {
   const { id } = useParams()
@@ -20,6 +21,7 @@ export default function JobPostingPage() {
         const jobData = await getJobPosting(id as string)
         setJob(jobData)
         setError('')
+        await trackJobView(id as string)
       } catch (error) {
         console.error('Failed to fetch job:', error)
         setError('Failed to load job posting')
@@ -30,6 +32,16 @@ export default function JobPostingPage() {
 
     fetchJob()
   }, [id])
+
+  const handleApply = async () => {
+    try {
+      await fetch(`/api/jobs/${id}/apply`, {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Failed to record application:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -95,6 +107,11 @@ export default function JobPostingPage() {
                       <span>Apply by {new Date(job.applicationDeadline).toLocaleDateString()}</span>
                     </div>
                   )}
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-inset ring-gray-400/20">
+                      {job.viewsCount || 0} views
+                    </span>
+                  </div>
                 </div>
               </div>
               {job.salary && (
@@ -295,6 +312,7 @@ export default function JobPostingPage() {
                   href={job.applicationUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={handleApply}
                   className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Apply on Company Website
@@ -302,6 +320,7 @@ export default function JobPostingPage() {
               ) : (
                 <a
                   href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
+                  onClick={handleApply}
                   className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Apply via Email

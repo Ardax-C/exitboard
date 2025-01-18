@@ -32,25 +32,31 @@ model JobPosting {
   contactEmail            String
   authorId                String
   status                  PostingStatus   @default(ACTIVE)
-  createdAt               DateTime        @default(now())
-  updatedAt               DateTime        @updatedAt
+  applicationsCount       Int             @default(0)
+  isArchived             Boolean         @default(false)
+  lastActivityAt         DateTime        @default(now())
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
   applicationDeadline     DateTime?
   applicationInstructions String?
   applicationUrl          String?
-  benefits                String[]
-  companyDescription      String?
-  companyIndustry         String?
-  companySize             String?
-  companyWebsite          String?
-  contactPhone            String?
-  employmentType          EmploymentType?
+  benefits               String[]
+  companyDescription     String?
+  companyIndustry        String?
+  companySize            String?
+  companyWebsite         String?
+  contactPhone           String?
+  employmentType         EmploymentType?
   preferredQualifications String[]
-  responsibilities        String[]
-  skills                  String[]
-  startDate               DateTime?
-  workplaceType           WorkplaceType?
-  author                  User            @relation(fields: [authorId], references: [id])
-  salary                  Salary?
+  responsibilities       String[]
+  skills                 String[]
+  startDate              DateTime?
+  workplaceType          WorkplaceType?
+  author                 User            @relation(fields: [authorId], references: [id])
+  salary                 Salary?
+  cancelReason           String?
+  viewsCount             Int             @default(0)
+  views                  JobView[]
 }
 
 model Salary {
@@ -95,9 +101,12 @@ enum WorkplaceType {
 }
 
 enum PostingStatus {
-  ACTIVE
-  CLOSED
   DRAFT
+  ACTIVE
+  PAUSED
+  FILLED
+  EXPIRED
+  CANCELLED
 }
 
 enum SalaryPeriod {
@@ -105,4 +114,14 @@ enum SalaryPeriod {
   MONTHLY
   YEARLY
   WEEKLY
+}
+
+model JobView {
+  jobId     String
+  visitorId String
+  createdAt DateTime @default(now())
+  job       JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, visitorId])
+  @@index([jobId])
 }

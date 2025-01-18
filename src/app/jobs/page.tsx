@@ -164,6 +164,9 @@ export default function JobsPage() {
                     </div>
                   )}
                   <div className="mt-4 flex items-center gap-4">
+                    <span className="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400">
+                      {job.viewsCount || 0} views
+                    </span>
                     {job.requirements.slice(0, 3).map((req, index) => (
                       <span
                         key={index}

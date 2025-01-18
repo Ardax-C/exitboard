@@ -33,6 +33,10 @@ export interface JobPosting {
   applicationUrl?: string
   applicationInstructions?: string
   status: string
+  isArchived: boolean
+  applicationsCount: number
+  viewsCount: number
+  lastActivityAt: string
   createdAt: string
   updatedAt: string
 }
@@ -157,5 +161,68 @@ export async function deleteJobPosting(id: string) {
   if (!response.ok) {
     const error = await response.json()
     throw new Error(error.error || 'Failed to delete job posting')
+  }
+}
+
+export async function updateJobStatus(id: string, status: string, isArchived?: boolean, reason?: string) {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Not authenticated')
+  }
+
+  console.log('Updating job status:', { id, status, isArchived, reason })
+
+  const response = await fetch(`/api/jobs/${id}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ 
+      ...(status && { status }),
+      ...(typeof isArchived === 'boolean' && { isArchived }),
+      ...(reason && { reason })
+    })
+  })
+
+  if (!response.ok) {
+    const data = await response.json()
+    throw new Error(data.error || 'Failed to update job status')
+  }
+
+  return response.json()
+}
+
+export function getStatusLabel(status: string): string {
+  switch (status) {
+    case 'ACTIVE':
+      return 'Active'
+    case 'PAUSED':
+      return 'Paused'
+    case 'FILLED':
+      return 'Filled'
+    case 'EXPIRED':
+      return 'Expired'
+    case 'CANCELLED':
+      return 'Cancelled'
+    default:
+      return status
+  }
+}
+
+export function getStatusColor(status: string): string {
+  switch (status) {
+    case 'ACTIVE':
+      return 'green'
+    case 'PAUSED':
+      return 'yellow'
+    case 'FILLED':
+      return 'blue'
+    case 'EXPIRED':
+      return 'gray'
+    case 'CANCELLED':
+      return 'red'
+    default:
+      return 'gray'
   }
 } 

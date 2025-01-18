@@ -180,6 +180,18 @@ export default function JobPostingForm({
             />
           </div>
 
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-300">Company Description</label>
+            <textarea
+              name="companyDescription"
+              value={formData.companyDescription}
+              onChange={handleChange}
+              rows={3}
+              placeholder="Tell us about your company..."
+              className="mt-1 block w-full rounded-md border-0 bg-gray-700 py-1.5 pl-2.5 text-white shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-300">Location</label>
             <input

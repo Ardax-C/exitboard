@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/contexts/UserContext'
 import { deleteAccount, updateProfile, removeAuthToken } from '@/lib/auth'
-import { getMyJobPostings, deleteJobPosting, JobPosting } from '@/lib/jobs'
+import { getMyJobPostings, deleteJobPosting, JobPosting, updateJobStatus } from '@/lib/jobs'
 import Link from 'next/link'
 import { PencilIcon, TrashIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import JobStatusManager from '@/components/JobStatusManager'
 
 export default function AccountPage() {
   const router = useRouter()
@@ -281,9 +282,58 @@ export default function AccountPage() {
                         {job.type.replace('_', ' ').toLowerCase()}
                       </span>
                       <span className="text-sm text-gray-400">{job.location}</span>
+                      <span className="text-sm text-gray-400">
+                        {job.applicationsCount} application{job.applicationsCount !== 1 ? 's' : ''}
+                      </span>
+                      <span className="text-sm text-gray-400">
+                        {job.viewsCount || 0} view{job.viewsCount !== 1 ? 's' : ''}
+                      </span>
                     </div>
                   </div>
-                  <div className="ml-4 flex items-center gap-2">
+                  <div className="ml-4 flex items-center gap-4">
+                    <JobStatusManager
+                      status={job.status}
+                      isArchived={job.isArchived}
+                      onUpdateStatus={async (newStatus) => {
+                        try {
+                          await updateJobStatus(job.id, newStatus)
+                          // Update the job in the local state
+                          setJobPostings(jobs =>
+                            jobs.map(j =>
+                              j.id === job.id
+                                ? { ...j, status: newStatus, lastActivityAt: new Date().toISOString() }
+                                : j
+                            )
+                          )
+                        } catch (error) {
+                          console.error('Failed to update job status:', error)
+                          setJobsError('Failed to update job status')
+                        }
+                      }}
+                      onToggleArchive={async () => {
+                        try {
+                          const newIsArchived = !job.isArchived;
+                          const newStatus = newIsArchived ? 'PAUSED' : 'ACTIVE';
+                          await updateJobStatus(job.id, newStatus, newIsArchived);
+                          // Update the job in the local state
+                          setJobPostings(jobs =>
+                            jobs.map(j =>
+                              j.id === job.id
+                                ? { 
+                                    ...j, 
+                                    status: newStatus,
+                                    isArchived: newIsArchived, 
+                                    lastActivityAt: new Date().toISOString() 
+                                  }
+                                : j
+                            )
+                          );
+                        } catch (error) {
+                          console.error('Failed to toggle archive status:', error);
+                          setJobsError('Failed to update archive status');
+                        }
+                      }}
+                    />
                     <Link
                       href={`/jobs/${job.id}/edit`}
                       className="p-2 text-gray-400 hover:text-white rounded-md hover:bg-gray-600"

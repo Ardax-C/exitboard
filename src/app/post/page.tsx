@@ -81,8 +81,8 @@ export default function PostJobPage() {
           <JobPostingForm
             onSubmit={handleSubmit}
             submitButtonText={isSubmitting ? 'Posting...' : 'Post Job'}
-          />
-        </div>
+                />
+              </div>
       </div>
     </div>
   )
