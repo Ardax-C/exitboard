@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from '@/lib/prisma';
 import { UserRole } from '@prisma/client';
+import { webcrypto } from 'crypto'
 
 export interface User {
   id: string;
@@ -89,6 +90,58 @@ export function removeAuthToken() {
   }
 }
 
+// Helper function to convert base64 to Uint8Array
+function base64ToUint8Array(base64: string): Uint8Array {
+  if (typeof window === 'undefined') {
+    return Buffer.from(base64, 'base64');
+  }
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Client-side decryption function
+async function decryptResponse(data: { encrypted: string; iv: string }): Promise<any> {
+  const ENCRYPTION_KEY = 'exitboard-encryption-key-2024'
+
+  // Generate key using PBKDF2
+  const keyMaterial = await window.crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(ENCRYPTION_KEY),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  )
+
+  const derivedKey = await window.crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: new TextEncoder().encode('exitboard-salt'),
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  )
+
+  // Decrypt the data
+  const decrypted = await window.crypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv: base64ToUint8Array(data.iv)
+    },
+    derivedKey,
+    base64ToUint8Array(data.encrypted)
+  )
+
+  return JSON.parse(new TextDecoder().decode(decrypted))
+}
+
 export async function signIn(data: { 
   email: string; 
   password: { encrypted: string; iv: string }; 
@@ -104,7 +157,8 @@ export async function signIn(data: {
     throw new Error(error.error || 'Failed to sign in');
   }
 
-  return response.json();
+  const encryptedData = await response.json();
+  return decryptResponse(encryptedData);
 }
 
 export async function signUp(data: {

@@ -129,7 +129,8 @@ export async function POST(request: Request) {
         name: true,
         email: true,
         company: true,
-        title: true
+        title: true,
+        role: true
       }
     })
 
