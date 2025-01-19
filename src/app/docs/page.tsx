@@ -25,9 +25,9 @@ export default function DocsPage() {
       { title: 'Security', id: 'security' },
     ],
     'Schema Documentation': [
-      { title: 'User Schema', id: 'user' },
-      { title: 'JobPost Schema', id: 'jobpost' },
-      { title: 'Application Schema', id: 'application' },
+      { title: 'User Model', id: 'user-model' },
+      { title: 'JobPost Model', id: 'jobpost-model' },
+      { title: 'Application Model', id: 'application-model' },
       { title: 'Relationships', id: 'relationships' },
       { title: 'Enums', id: 'enums' },
     ],
