@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import { webcrypto } from 'crypto'
+import { AccountStatus } from '@prisma/client'
 
 // Use a constant key for encryption/decryption
 const ENCRYPTION_KEY = 'exitboard-encryption-key-2024'
@@ -130,7 +131,8 @@ export async function POST(request: Request) {
         email: true,
         company: true,
         title: true,
-        role: true
+        role: true,
+        status: true
       }
     })
 
@@ -138,6 +140,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
+      )
+    }
+
+    // Check if account is deactivated
+    if (user.status === AccountStatus.DEACTIVATED) {
+      return NextResponse.json(
+        { error: 'Account has been deactivated' },
+        { status: 403 }
       )
     }
 

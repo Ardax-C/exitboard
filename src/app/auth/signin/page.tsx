@@ -31,15 +31,25 @@ export default function SignInPage() {
       })
       
       if (user && token) {
+        if (user.status === 'DEACTIVATED') {
+          setError('Your account has been deactivated. Please contact an administrator.')
+          setUser(null)
+          setAuthToken('')
+          return
+        }
         setAuthToken(token)
         setUser(user)
         router.push('/jobs')
       } else {
         throw new Error('Invalid response from server')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign in error:', error)
-      setError(error instanceof Error ? error.message : 'Failed to sign in')
+      if (error.message === 'Account has been deactivated') {
+        setError('Your account has been deactivated. Please contact an administrator.')
+      } else {
+        setError(error instanceof Error ? error.message : 'Failed to sign in')
+      }
       setUser(null)
       setAuthToken('')
     } finally {

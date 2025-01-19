@@ -34,6 +34,7 @@ export async function GET(request: Request) {
         email: true,
         title: true,
         role: true,
+        status: true,
         createdAt: true,
       },
       orderBy: {
