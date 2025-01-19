@@ -74,14 +74,28 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key-do-not-use-in-production',
 }; 
 
+interface StoredAuthData {
+  token: string;
+  user: {
+    id: string;
+    role: UserRole;
+    email: string;
+    name: string;
+    title?: string;
+    company?: string;
+  };
+}
+
 // Auth utility functions
-export function setAuthToken(token: string) {
+export function setAuthToken(token: string, userData: StoredAuthData['user']) {
   if (typeof window !== 'undefined') {
-    // Set in localStorage
-    localStorage.setItem('token', token)
+    const authData: StoredAuthData = { token, user: userData };
+    
+    // Store complete auth data in localStorage
+    localStorage.setItem('authData', JSON.stringify(authData));
     
     // Set cookie with proper attributes
-    document.cookie = `token=${token}; path=/; max-age=604800; secure; samesite=strict`
+    document.cookie = `token=${token}; path=/; max-age=604800; secure; samesite=strict`;
     
     // Start session check
     updateSessionCheck();
@@ -89,25 +103,42 @@ export function setAuthToken(token: string) {
 }
 
 export function getAuthToken() {
-  if (typeof window === 'undefined') return null
+  if (typeof window === 'undefined') return null;
   
   // Try localStorage first
-  const token = localStorage.getItem('token')
-  if (token) return token
+  const authData = localStorage.getItem('authData');
+  if (authData) {
+    const parsed = JSON.parse(authData) as StoredAuthData;
+    return parsed.token;
+  }
   
   // Fallback to cookie
-  const cookies = document.cookie.split(';')
-  const tokenCookie = cookies.find(c => c.trim().startsWith('token='))
-  return tokenCookie ? tokenCookie.split('=')[1].trim() : null
+  const cookies = document.cookie.split(';');
+  const tokenCookie = cookies.find(c => c.trim().startsWith('token='));
+  return tokenCookie ? tokenCookie.split('=')[1].trim() : null;
+}
+
+export function getStoredUser(): StoredAuthData['user'] | null {
+  if (typeof window === 'undefined') return null;
+  
+  const authData = localStorage.getItem('authData');
+  if (!authData) return null;
+  
+  try {
+    const parsed = JSON.parse(authData) as StoredAuthData;
+    return parsed.user;
+  } catch {
+    return null;
+  }
 }
 
 export function removeAuthToken() {
   if (typeof window !== 'undefined') {
     // Clear localStorage
-    localStorage.removeItem('token')
+    localStorage.removeItem('authData');
     
     // Clear cookie
-    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=strict'
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=strict';
     
     // Stop session check
     if (sessionCheckInterval) {
@@ -249,7 +280,7 @@ function base64ToUint8Array(base64: string): Uint8Array {
 }
 
 // Client-side decryption function
-async function decryptResponse(data: { encrypted: string; iv: string }): Promise<any> {
+async function decryptResponse(data: { encrypted: string; iv: string }): Promise<{ token: string; user: User }> {
   const ENCRYPTION_KEY = 'exitboard-encryption-key-2024'
 
   // Generate key using PBKDF2
@@ -284,7 +315,12 @@ async function decryptResponse(data: { encrypted: string; iv: string }): Promise
     base64ToUint8Array(data.encrypted)
   )
 
-  return JSON.parse(new TextDecoder().decode(decrypted))
+  const token = jwt.sign({
+    userId: JSON.parse(new TextDecoder().decode(decrypted)).id,
+  }, process.env.JWT_SECRET || 'fallback-secret-key');
+
+  const user = JSON.parse(new TextDecoder().decode(decrypted)) as User;
+  return { token, user };
 }
 
 export async function signIn(data: { 
@@ -303,7 +339,9 @@ export async function signIn(data: {
   }
 
   const encryptedData = await response.json();
-  return decryptResponse(encryptedData);
+  const { token, user } = await decryptResponse(encryptedData);
+  setAuthToken(token, user);
+  return { token, user };
 }
 
 export async function signUp(data: {
@@ -327,13 +365,33 @@ export async function signUp(data: {
 }
 
 export async function getCurrentUser() {
+  // First try to get from stored data
+  const storedUser = getStoredUser();
+  if (storedUser) {
+    try {
+      // Verify the session is still valid
+      await debouncedSessionCheck();
+      return storedUser;
+    } catch {
+      // Session check failed, continue to API call
+    }
+  }
+
   try {
     const response = await fetchWithAuth('/api/auth/me');
     if (!response.ok) {
       removeAuthToken();
       return null;
     }
-    return response.json();
+    const userData = await response.json();
+    
+    // Update stored user data
+    const token = getAuthToken();
+    if (token) {
+      setAuthToken(token, userData);
+    }
+    
+    return userData;
   } catch (error) {
     removeAuthToken();
     return null;
