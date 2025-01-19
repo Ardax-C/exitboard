@@ -55,28 +55,20 @@ export default function DocsPage() {
     setError(null)
 
     try {
-      console.log(`Fetching ${type} documentation...`)
       const url = `/docs/${type === 'api' ? 'API' : 'SCHEMA'}.md`
-      console.log('URL:', url)
-      
       const response = await fetch(url)
-      console.log('Response status:', response.status)
       
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Response error:', errorText)
         throw new Error(`Failed to load documentation: ${response.statusText}`)
       }
 
       const markdown = await response.text()
-      console.log('Markdown loaded, length:', markdown.length)
       
       // Remove the main title
       const contentWithoutTitle = markdown.replace(/^#[^#\n]*\n/, '')
       
       // Split into sections
       const sections = contentWithoutTitle.split('\n## ').filter(Boolean)
-      console.log('Found sections:', sections.length)
       
       // Process sections
       const processedSections = sections.map(section => {
@@ -84,15 +76,12 @@ export default function DocsPage() {
         const title = lines[0].trim()
         const content = '## ' + section
         const id = getSectionId(title)
-        console.log('Processing section:', { title, id })
         return { id, title, content }
       })
 
       // Find the requested section
       const section = processedSections.find(s => s.id === sectionId)
       if (!section) {
-        console.error('Section not found:', sectionId)
-        console.log('Available sections:', processedSections.map(s => s.id))
         throw new Error(`Section "${sectionId}" not found`)
       }
 
