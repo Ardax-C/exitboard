@@ -13,6 +13,7 @@ const publicRoutes = [
   '/api/auth/signup',
   '/api/auth/verify-credentials',
   '/api/auth/me',
+  '/api/auth/session',
   '/_next',
   '/static',
   '/favicon.ico',
@@ -63,6 +64,19 @@ export async function middleware(request: NextRequest) {
     // Forward the token to API routes
     const requestHeaders = new Headers(request.headers)
     requestHeaders.set('authorization', `Bearer ${token}`)
+
+    // For protected API routes, verify auth status first
+    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth/')) {
+      const authResponse = await fetch(new URL('/api/auth/session', request.url), {
+        headers: requestHeaders,
+      })
+
+      if (!authResponse.ok) {
+        const response = new NextResponse('Unauthorized', { status: 401 })
+        response.cookies.delete('token')
+        return response
+      }
+    }
 
     return NextResponse.next({
       request: {

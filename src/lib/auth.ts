@@ -128,34 +128,62 @@ async function checkSession() {
     if (!response.ok) {
       // Session is invalid - clear auth and redirect
       removeAuthToken();
-      window.location.href = '/auth/signin';
+      window.location.href = '/auth/signin?error=session-expired';
       throw new Error('Session expired');
     }
+    return true;
   } catch (error) {
     removeAuthToken();
-    window.location.href = '/auth/signin';
+    window.location.href = '/auth/signin?error=session-expired';
     throw error;
   }
 }
 
+let sessionCheckPromise: Promise<boolean> | null = null;
+
+// Debounced session check to prevent multiple simultaneous checks
+async function debouncedSessionCheck() {
+  if (!sessionCheckPromise) {
+    sessionCheckPromise = checkSession().finally(() => {
+      sessionCheckPromise = null;
+    });
+  }
+  return sessionCheckPromise;
+}
+
 // Start periodic session check
 if (typeof window !== 'undefined') {
-  // Check session every minute
-  setInterval(checkSession, 60000);
+  // Check session every 15 seconds
+  setInterval(debouncedSessionCheck, 15000);
   
-  // Also check when tab becomes visible
+  // Check when tab becomes visible
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && getAuthToken()) {
-      checkSession();
+      debouncedSessionCheck();
+    }
+  });
+
+  // Check on route changes
+  window.addEventListener('popstate', () => {
+    if (getAuthToken()) {
+      debouncedSessionCheck();
     }
   });
 }
 
-// Update fetchWithAuth to check session on 401 responses
+// Update fetchWithAuth to always check session first
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const token = getAuthToken();
   if (!token) {
     throw new Error('Not authenticated');
+  }
+
+  // Check session before making the request
+  try {
+    await debouncedSessionCheck();
+  } catch (error) {
+    // checkSession will handle the redirect
+    throw new Error('Session expired');
   }
 
   const headers = new Headers(options.headers || {});
@@ -168,13 +196,9 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   });
 
   if (response.status === 401) {
-    // Token might be invalid - check session
-    try {
-      await checkSession();
-    } catch {
-      // checkSession will handle redirect if needed
-      throw new Error('Session expired');
-    }
+    removeAuthToken();
+    window.location.href = '/auth/signin?error=session-expired';
+    throw new Error('Session expired');
   }
 
   return response;
