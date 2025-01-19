@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { User, UserRole } from '@prisma/client';
-import jwt from 'jsonwebtoken';
+import { UserRole } from '@prisma/client';
+import { verifyAuth } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
@@ -13,16 +11,15 @@ export async function GET(request: Request) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // Verify the JWT token
+    // Verify the token and user status
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key') as { userId: string };
+    const authResult = await verifyAuth(token);
 
-    // Get the user from the database
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-    });
+    if (!authResult.isValid || !authResult.user) {
+      return new NextResponse(authResult.error || 'Unauthorized', { status: 401 });
+    }
 
-    if (!user || user.role !== UserRole.ADMIN) {
+    if (authResult.user.role !== UserRole.ADMIN) {
       return new NextResponse('Forbidden', { status: 403 });
     }
 
@@ -45,9 +42,6 @@ export async function GET(request: Request) {
     return NextResponse.json(users);
   } catch (error) {
     console.error('Error in admin users route:', error);
-    if (error instanceof jwt.JsonWebTokenError) {
-      return new NextResponse('Invalid token', { status: 401 });
-    }
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -58,22 +52,20 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Get the authorization header
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // Verify the JWT token
+    // Verify the token and user status
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key') as { userId: string };
+    const authResult = await verifyAuth(token);
 
-    // Get the admin user from the database
-    const adminUser = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-    });
+    if (!authResult.isValid || !authResult.user) {
+      return new NextResponse(authResult.error || 'Unauthorized', { status: 401 });
+    }
 
-    if (!adminUser || adminUser.role !== UserRole.ADMIN) {
+    if (authResult.user.role !== UserRole.ADMIN) {
       return new NextResponse('Forbidden', { status: 403 });
     }
 
@@ -93,6 +85,7 @@ export async function PATCH(
         email: true,
         title: true,
         role: true,
+        status: true,
         createdAt: true,
       },
     });
@@ -100,9 +93,6 @@ export async function PATCH(
     return NextResponse.json(updatedUser);
   } catch (error) {
     console.error('Error updating user:', error);
-    if (error instanceof jwt.JsonWebTokenError) {
-      return new NextResponse('Invalid token', { status: 401 });
-    }
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 } 

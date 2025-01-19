@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { AccountStatus } from '@prisma/client'
-import prisma from '@/lib/prisma'
 
 export async function middleware(request: NextRequest) {
   // Skip auth check for public routes
@@ -22,35 +20,19 @@ export async function middleware(request: NextRequest) {
 
   try {
     const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key') as { userId: string }
+    // Only verify the token's validity and expiration
+    jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key')
 
-    // Get user and check status
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        status: true,
-        tokenInvalidatedAt: true,
+    // Add the token to the request headers for API routes to use
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-verified-token', token)
+
+    // Return response with modified headers
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
       },
     })
-
-    if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 })
-    }
-
-    // Check if user is deactivated
-    if (user.status === AccountStatus.DEACTIVATED) {
-      return new NextResponse('Account deactivated', { status: 403 })
-    }
-
-    // Check if token was invalidated
-    if (user.tokenInvalidatedAt) {
-      const tokenIssuedAt = new Date((decoded as any).iat * 1000)
-      if (tokenIssuedAt < user.tokenInvalidatedAt) {
-        return new NextResponse('Session expired', { status: 401 })
-      }
-    }
-
-    return NextResponse.next()
   } catch (error) {
     return new NextResponse('Unauthorized', { status: 401 })
   }

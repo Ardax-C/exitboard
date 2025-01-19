@@ -1,8 +1,9 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from '@/lib/prisma';
-import { UserRole } from '@prisma/client';
+import { UserRole, AccountStatus } from '@prisma/client';
 import { webcrypto } from 'crypto'
+import jwt from 'jsonwebtoken';
 
 export interface User {
   id: string;
@@ -252,4 +253,39 @@ export async function deleteAccount() {
   }
 
   removeAuthToken();
+}
+
+export async function verifyAuth(token: string) {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key') as { userId: string };
+    
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        role: true,
+        status: true,
+        tokenInvalidatedAt: true,
+      },
+    });
+
+    if (!user) {
+      return { isValid: false, error: 'User not found' };
+    }
+
+    if (user.status === AccountStatus.DEACTIVATED) {
+      return { isValid: false, error: 'Account deactivated' };
+    }
+
+    if (user.tokenInvalidatedAt) {
+      const tokenIssuedAt = new Date((decoded as any).iat * 1000);
+      if (tokenIssuedAt < user.tokenInvalidatedAt) {
+        return { isValid: false, error: 'Session expired' };
+      }
+    }
+
+    return { isValid: true, user };
+  } catch (error) {
+    return { isValid: false, error: 'Invalid token' };
+  }
 } 
