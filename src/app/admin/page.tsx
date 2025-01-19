@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getAuthToken } from '@/lib/auth';
 
 interface User {
   id: string;
@@ -24,15 +25,28 @@ export default function AdminDashboard() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users');
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch('/api/admin/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
       if (!response.ok) {
         throw new Error('You do not have permission to access this page');
       }
+
       const data = await response.json();
       setUsers(data);
-    } catch (err) {
+    } catch (err: any) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      router.push('/auth/login');
+      if (err?.message === 'Not authenticated') {
+        router.push('/auth/signin');
+      }
     } finally {
       setLoading(false);
     }
@@ -40,10 +54,16 @@ export default function AdminDashboard() {
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ role: newRole }),
       });
@@ -54,8 +74,11 @@ export default function AdminDashboard() {
 
       // Refresh the users list
       fetchUsers();
-    } catch (err) {
+    } catch (err: any) {
       setError(err instanceof Error ? err.message : 'An error occurred');
+      if (err?.message === 'Not authenticated') {
+        router.push('/auth/signin');
+      }
     }
   };
 

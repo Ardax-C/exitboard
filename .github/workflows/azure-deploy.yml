@@ -40,10 +40,11 @@ jobs:
       - name: Build Next.js app
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: 'https://exitboard.azurewebsites.net/api'
+          NEXT_PUBLIC_API_URL: 'https://exitboard-hzapf7c4b9g8c0am.westus2-01.azurewebsites.net/api'
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: 'https://exitboard-hzapf7c4b9g8c0am.westus2-01.azurewebsites.net/'
 
       - name: Zip artifact for deployment
         run: zip -r release.zip ./* .next

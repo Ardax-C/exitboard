@@ -3,19 +3,23 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { User, UserRole } from '@prisma/client';
+import jwt from 'jsonwebtoken';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Check if user is authenticated and is an admin
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.email) {
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // Get the user's role from the database
+    // Verify the JWT token
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key') as { userId: string };
+
+    // Get the user from the database
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: decoded.userId },
     });
 
     if (!user || user.role !== UserRole.ADMIN) {
@@ -40,6 +44,9 @@ export async function GET() {
     return NextResponse.json(users);
   } catch (error) {
     console.error('Error in admin users route:', error);
+    if (error instanceof jwt.JsonWebTokenError) {
+      return new NextResponse('Invalid token', { status: 401 });
+    }
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -50,14 +57,19 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.email) {
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
+    // Verify the JWT token
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key') as { userId: string };
+
+    // Get the admin user from the database
     const adminUser = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: decoded.userId },
     });
 
     if (!adminUser || adminUser.role !== UserRole.ADMIN) {
@@ -87,6 +99,9 @@ export async function PATCH(
     return NextResponse.json(updatedUser);
   } catch (error) {
     console.error('Error updating user:', error);
+    if (error instanceof jwt.JsonWebTokenError) {
+      return new NextResponse('Invalid token', { status: 401 });
+    }
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 } 
