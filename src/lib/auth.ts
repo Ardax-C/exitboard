@@ -77,7 +77,7 @@ export const authOptions: NextAuthOptions = {
 
 interface StoredAuthData {
   token: string;
-  user: {
+  user?: {
     id: string;
     role: UserRole;
     email: string;
@@ -88,9 +88,12 @@ interface StoredAuthData {
 }
 
 // Auth utility functions
-export function setAuthToken(token: string, userData: StoredAuthData['user']) {
+export function setAuthToken(token: string, userData?: StoredAuthData['user'] | null) {
   if (typeof window !== 'undefined') {
-    const authData: StoredAuthData = { token, user: userData };
+    const authData: StoredAuthData = { token };
+    if (userData) {
+      authData.user = userData;
+    }
     
     // Store complete auth data in localStorage
     localStorage.setItem('authData', JSON.stringify(authData));

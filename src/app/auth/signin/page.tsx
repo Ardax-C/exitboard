@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { signIn, setAuthToken } from '@/lib/auth'
 import { useUser } from '@/contexts/UserContext'
 import { encryptData } from '@/lib/crypto'
+import { AccountStatus } from '@prisma/client'
 
 export default function SignInPage() {
   const router = useRouter()
@@ -23,21 +24,19 @@ export default function SignInPage() {
     setLoading(true)
 
     try {
-      const encryptedPassword = await encryptData(formData.password)
-      
-      const { user, token } = await signIn({
-        ...formData,
-        password: encryptedPassword
+      const { token, user } = await signIn({
+        email: formData.email,
+        password: await encryptData(formData.password)
       })
       
-      if (user && token) {
-        if (user.status === 'DEACTIVATED') {
+      if (user) {
+        if (user.status === AccountStatus.DEACTIVATED) {
           setError('Your account has been deactivated. Please contact an administrator.')
           setUser(null)
           setAuthToken('')
           return
         }
-        setAuthToken(token)
+        setAuthToken(token, user)
         setUser(user)
         router.push('/jobs')
       } else {
