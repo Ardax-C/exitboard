@@ -14,6 +14,7 @@ interface DocSection {
   id: string
   title: string
   content: string
+  icon?: string
 }
 
 function getSectionId(title: string): string {
@@ -26,19 +27,19 @@ function getSectionId(title: string): string {
 export default function DocsPage() {
   const [sections] = useState({
     'API Documentation': [
-      { title: 'Authentication', id: 'authentication' },
-      { title: 'User Management', id: 'user-management' },
-      { title: 'Admin Routes', id: 'admin-routes' },
-      { title: 'Job Posts', id: 'job-posts' },
-      { title: 'Data Types', id: 'data-types' },
-      { title: 'Security', id: 'security' },
+      { title: 'Authentication', id: 'authentication', icon: '🔐' },
+      { title: 'User Management', id: 'user-management', icon: '👤' },
+      { title: 'Admin Routes', id: 'admin-routes', icon: '⚡' },
+      { title: 'Job Posts', id: 'job-posts', icon: '📝' },
+      { title: 'Data Types', id: 'data-types', icon: '🔧' },
+      { title: 'Security', id: 'security', icon: '🛡️' },
     ],
     'Schema Documentation': [
-      { title: 'User Model', id: 'user-model' },
-      { title: 'JobPost Model', id: 'jobpost-model' },
-      { title: 'Application Model', id: 'application-model' },
-      { title: 'Relationships', id: 'relationships' },
-      { title: 'Enums', id: 'enums' },
+      { title: 'User Model', id: 'user-model', icon: '👤' },
+      { title: 'JobPost Model', id: 'jobpost-model', icon: '📄' },
+      { title: 'Application Model', id: 'application-model', icon: '📨' },
+      { title: 'Relationships', id: 'relationships', icon: '🔗' },
+      { title: 'Enums', id: 'enums', icon: '📋' },
     ],
   })
 
@@ -106,7 +107,7 @@ export default function DocsPage() {
           id: section.id,
           title: section.title,
           content: processedContent.toString()
-        }
+        } as DocSection
       }))
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
@@ -118,35 +119,38 @@ export default function DocsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            API Documentation
-          </h1>
-          <p className="mt-3 text-lg text-gray-400">
+          <div className="inline-block">
+            <h1 className="text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 sm:text-5xl mb-2">
+              API Documentation
+            </h1>
+            <div className="h-1 w-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
+          </div>
+          <p className="mt-6 text-lg text-gray-300">
             Complete documentation for the ExitBoard API and database schema
           </p>
         </div>
 
         {error && (
-          <div className="mt-4 p-4 bg-red-500/10 rounded-lg">
+          <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
             <p className="text-red-400">{error}</p>
           </div>
         )}
 
         <div className="mt-12">
           <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
-            <Tab.List className="flex space-x-4 rounded-xl bg-gray-800/50 p-1">
+            <Tab.List className="flex space-x-4 rounded-xl bg-gray-800/50 p-1.5 backdrop-blur-sm border border-gray-700/50">
               {Object.keys(sections).map((category) => (
                 <Tab
                   key={category}
                   className={({ selected }) =>
                     classNames(
-                      'w-full rounded-lg py-2.5 text-sm font-medium leading-5',
+                      'w-full rounded-lg py-3 text-sm font-medium leading-5 transition-all duration-200',
                       'ring-white/60 ring-offset-2 ring-offset-gray-900 focus:outline-none focus:ring-2',
                       selected
-                        ? 'bg-indigo-600 text-white shadow'
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25'
                         : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                     )
                   }
@@ -159,9 +163,9 @@ export default function DocsPage() {
               {Object.entries(sections).map(([category, items], idx) => (
                 <Tab.Panel
                   key={idx}
-                  className="rounded-xl bg-gray-800/50 p-6"
+                  className="rounded-xl bg-gray-800/50 p-6 backdrop-blur-sm border border-gray-700/50"
                 >
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     {items.map((item) => (
                       <details
                         key={item.id}
@@ -175,28 +179,35 @@ export default function DocsPage() {
                           }
                         }}
                       >
-                        <summary className="flex cursor-pointer items-center justify-between rounded-lg bg-gray-700/50 px-4 py-3 hover:bg-gray-700">
-                          <h3 className="text-lg font-medium text-white">
-                            {item.title}
-                          </h3>
+                        <summary className="flex cursor-pointer items-center justify-between rounded-lg bg-gray-700/50 px-6 py-4 hover:bg-gray-700 transition-colors duration-200 border border-gray-600/50">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl" role="img" aria-label={item.title}>
+                              {item.icon}
+                            </span>
+                            <h3 className="text-lg font-medium text-white">
+                              {item.title}
+                            </h3>
+                          </div>
                           <ChevronDownIcon 
-                            className="h-5 w-5 text-gray-400 group-open:rotate-180 transition-transform" 
+                            className="h-5 w-5 text-gray-400 group-open:rotate-180 transition-transform duration-200" 
                           />
                         </summary>
-                        <div className="mt-4 px-4 prose prose-invert max-w-none">
-                          {loading[item.id] ? (
-                            <div className="flex items-center justify-center py-8">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                            </div>
-                          ) : loadedContent[item.id] ? (
-                            <div dangerouslySetInnerHTML={{ 
-                              __html: loadedContent[item.id].content 
-                            }} />
-                          ) : (
-                            <p className="text-gray-400">
-                              Click to load documentation
-                            </p>
-                          )}
+                        <div className="mt-4 px-6">
+                          <div className="prose prose-invert prose-pre:bg-gray-800/50 prose-pre:border prose-pre:border-gray-700/50 prose-code:text-indigo-300 prose-a:text-indigo-400 hover:prose-a:text-indigo-300 prose-headings:text-gray-100 max-w-none">
+                            {loading[item.id] ? (
+                              <div className="flex items-center justify-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-r-transparent"></div>
+                              </div>
+                            ) : loadedContent[item.id] ? (
+                              <div dangerouslySetInnerHTML={{ 
+                                __html: loadedContent[item.id].content 
+                              }} />
+                            ) : (
+                              <p className="text-gray-400">
+                                Click to load documentation
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </details>
                     ))}
