@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuthToken } from '@/lib/auth';
+import { fetchWithAuth } from '@/lib/auth';
 import UserDetailsModal from '@/components/UserDetailsModal';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
@@ -25,32 +25,17 @@ export default function AdminDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   const fetchUsers = async () => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await fetch('/api/admin/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
+      const response = await fetchWithAuth('/api/admin/users');
       if (!response.ok) {
         throw new Error('You do not have permission to access this page');
       }
-
       const data = await response.json();
       setUsers(data);
     } catch (err: any) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      if (err?.message === 'Not authenticated') {
+      if (err?.message === 'Not authenticated' || err?.message === 'Session expired') {
         router.push('/auth/signin');
       }
     } finally {
@@ -59,6 +44,10 @@ export default function AdminDashboard() {
     }
   };
 
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   const handleSync = async () => {
     setSyncing(true);
     await fetchUsers();
@@ -66,17 +55,8 @@ export default function AdminDashboard() {
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetchWithAuth(`/api/admin/users/${userId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({ role: newRole }),
       });
 
@@ -92,7 +72,7 @@ export default function AdminDashboard() {
       }
     } catch (err: any) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      if (err?.message === 'Not authenticated') {
+      if (err?.message === 'Not authenticated' || err?.message === 'Session expired') {
         router.push('/auth/signin');
       }
     }
@@ -100,17 +80,8 @@ export default function AdminDashboard() {
 
   const handleStatusChange = async (userId: string, newStatus: 'ACTIVE' | 'DEACTIVATED') => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetchWithAuth(`/api/admin/users/${userId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({ status: newStatus }),
       });
 
@@ -120,12 +91,8 @@ export default function AdminDashboard() {
 
       // If the user is being deactivated, force logout their session
       if (newStatus === 'DEACTIVATED') {
-        const logoutResponse = await fetch('/api/auth/force-logout', {
+        const logoutResponse = await fetchWithAuth('/api/auth/force-logout', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
           body: JSON.stringify({ userId }),
         });
 
@@ -142,7 +109,7 @@ export default function AdminDashboard() {
       }
     } catch (err: any) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      if (err?.message === 'Not authenticated') {
+      if (err?.message === 'Not authenticated' || err?.message === 'Session expired') {
         router.push('/auth/signin');
       }
     }

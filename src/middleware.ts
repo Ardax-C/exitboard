@@ -2,39 +2,62 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import jwt from 'jsonwebtoken'
 
+// Define public routes that don't require authentication
+const publicRoutes = [
+  '/',
+  '/auth/signin',
+  '/auth/signup',
+  '/jobs',
+  '/api/auth/signin',
+  '/api/auth/signup',
+  '/api/auth/verify-credentials',
+]
+
 export async function middleware(request: NextRequest) {
-  // Skip auth check for public routes
-  if (
-    request.nextUrl.pathname.startsWith('/auth') ||
-    request.nextUrl.pathname === '/' ||
+  // Check if the path is public
+  const isPublicPath = publicRoutes.some(route => 
+    request.nextUrl.pathname === route || 
     request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.startsWith('/api/auth')
-  ) {
+    request.nextUrl.pathname.startsWith('/static') ||
+    request.nextUrl.pathname.match(/\.[a-zA-Z0-9]+$/) // Files with extensions
+  )
+
+  if (isPublicPath) {
     return NextResponse.next()
   }
 
+  // Get token from Authorization header
   const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return new NextResponse('Unauthorized', { status: 401 })
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
+
+  // If no token and not a public path, redirect to login
+  if (!token) {
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return new NextResponse('Unauthorized', { status: 401 })
+    }
+    return NextResponse.redirect(new URL('/auth/signin', request.url))
   }
 
   try {
-    const token = authHeader.substring(7)
-    // Only verify the token's validity and expiration
+    // Verify token
     jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key')
 
-    // Add the token to the request headers for API routes to use
+    // Forward the token to the API routes
     const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('x-verified-token', token)
+    requestHeaders.set('authorization', `Bearer ${token}`)
 
-    // Return response with modified headers
     return NextResponse.next({
       request: {
         headers: requestHeaders,
       },
     })
   } catch (error) {
-    return new NextResponse('Unauthorized', { status: 401 })
+    // If token is invalid and it's an API route, return 401
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return new NextResponse('Unauthorized', { status: 401 })
+    }
+    // For non-API routes, redirect to login
+    return NextResponse.redirect(new URL('/auth/signin', request.url))
   }
 }
 
@@ -42,13 +65,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
-     * 1. /api/auth/* (authentication routes)
-     * 2. /_next/* (Next.js internals)
-     * 3. /auth/* (auth pages)
-     * 4. /static/* (static files)
-     * 5. /*.* (files with extensions)
+     * Match all routes except:
+     * 1. /_next (Next.js internals)
+     * 2. /static (static files)
+     * 3. /_vercel (Vercel internals)
+     * 4. /favicon.ico, etc. (asset files)
      */
-    '/((?!api/auth|_next|auth|static|[\\w-]+\\.\\w+).*)',
+    '/((?!_next|static|_vercel|[\\w-]+\\.\\w+).*)',
   ],
 } 

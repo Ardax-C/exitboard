@@ -92,6 +92,42 @@ export function removeAuthToken() {
   }
 }
 
+// Helper function to add auth headers to fetch requests
+export function getAuthHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  if (!token) return {};
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+// Helper function to make authenticated requests
+export async function fetchWithAuth(url: string, options: RequestInit = {}) {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const headers = new Headers(options.headers || {});
+  headers.set('Authorization', `Bearer ${token}`);
+  headers.set('Content-Type', 'application/json');
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (response.status === 401) {
+    // Token is invalid or expired
+    removeAuthToken();
+    window.location.href = '/auth/signin';
+    throw new Error('Session expired');
+  }
+
+  return response;
+}
+
 // Helper function to convert base64 to Uint8Array
 function base64ToUint8Array(base64: string): Uint8Array {
   if (typeof window === 'undefined') {
@@ -184,21 +220,12 @@ export async function signUp(data: {
 }
 
 export async function getCurrentUser() {
-  const token = getAuthToken();
-  if (!token) return null;
-
   try {
-    const response = await fetch('/api/auth/me', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+    const response = await fetchWithAuth('/api/auth/me');
     if (!response.ok) {
       removeAuthToken();
       return null;
     }
-
     return response.json();
   } catch (error) {
     removeAuthToken();
@@ -212,17 +239,8 @@ export async function updateProfile(data: {
   company?: string;
   title?: string;
 }) {
-  const token = getAuthToken();
-  if (!token) {
-    throw new Error('Not authenticated');
-  }
-
-  const response = await fetch('/api/users/profile', {
+  const response = await fetchWithAuth('/api/users/profile', {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
     body: JSON.stringify(data),
   });
 
@@ -235,16 +253,8 @@ export async function updateProfile(data: {
 }
 
 export async function deleteAccount() {
-  const token = getAuthToken();
-  if (!token) {
-    throw new Error('Not authenticated');
-  }
-
-  const response = await fetch('/api/users/delete', {
+  const response = await fetchWithAuth('/api/users/delete', {
     method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
 
   if (!response.ok) {
