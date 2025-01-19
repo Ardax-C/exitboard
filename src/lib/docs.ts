@@ -1,9 +1,5 @@
 import { remark } from 'remark'
 import html from 'remark-html'
-import { readFileSync } from 'fs'
-import { join } from 'path'
-
-const docsDirectory = join(process.cwd(), 'docs')
 
 export interface DocSection {
   id: string
@@ -13,35 +9,28 @@ export interface DocSection {
 
 export async function getDocContent(type: 'api' | 'schema', sectionId: string): Promise<DocSection | null> {
   try {
-    const fileName = type === 'api' ? 'API.md' : 'SCHEMA.md'
-    const fullPath = join(docsDirectory, fileName)
-    const fileContents = readFileSync(fullPath, 'utf8')
+    const response = await fetch(`/docs/${type === 'api' ? 'API' : 'SCHEMA'}.md`)
+    if (!response.ok) {
+      throw new Error(`Failed to load documentation: ${response.statusText}`)
+    }
 
-    // Split the content into sections based on ## headers
-    const sections = fileContents.split('\n## ')
-    
-    // Find the matching section
-    const section = sections.find(s => {
-      const title = s.split('\n')[0].trim()
-      return getSectionId(title) === sectionId
-    })
+    const markdown = await response.text()
+    const sections = markdown.split(/^## /m)
+    const section = sections.find(s => getSectionId(s.split('\n')[0]) === sectionId)
 
     if (!section) {
       return null
     }
 
     const title = section.split('\n')[0].trim()
-    const content = section.split('\n').slice(1).join('\n')
-
-    // Convert markdown to HTML
-    const processedContent = await remark()
+    const content = await remark()
       .use(html)
-      .process(content)
+      .process('## ' + section)
 
     return {
       id: sectionId,
       title,
-      content: processedContent.toString(),
+      content: content.toString()
     }
   } catch (error) {
     console.error('Error loading documentation:', error)
@@ -53,5 +42,5 @@ export function getSectionId(title: string): string {
   return title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
+    .replace(/^-|-$/g, '')
 } 
