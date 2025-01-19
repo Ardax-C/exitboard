@@ -37,17 +37,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Check if the path requires authentication
-  const isProtectedPath = protectedRoutes.some(route => pathname.startsWith(route))
-
   // Get token from Authorization header or cookie
   const authHeader = request.headers.get('authorization')
   const token = authHeader?.startsWith('Bearer ') 
     ? authHeader.substring(7) 
     : request.cookies.get('token')?.value
 
-  // If accessing a protected route without a token, redirect to login
-  if (isProtectedPath && !token) {
+  // If no token, redirect to login
+  if (!token) {
     if (pathname.startsWith('/api/')) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
@@ -56,26 +53,21 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    if (token) {
-      // Verify token
-      jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key')
+    // Verify token
+    jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key')
 
-      // Forward the token to the API routes
-      const requestHeaders = new Headers(request.headers)
-      requestHeaders.set('authorization', `Bearer ${token}`)
+    // Forward the token to the API routes
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('authorization', `Bearer ${token}`)
 
-      // Create response
-      const response = NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      })
+    // Create response
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
 
-      return response
-    }
-
-    // For non-protected routes without token, allow access
-    return NextResponse.next()
+    return response
   } catch (error) {
     // If token is invalid
     if (pathname.startsWith('/api/')) {
