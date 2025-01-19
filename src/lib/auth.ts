@@ -70,6 +70,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
   },
+  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key-do-not-use-in-production',
 }; 
 
 // Auth utility functions

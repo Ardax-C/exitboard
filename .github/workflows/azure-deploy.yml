@@ -43,6 +43,7 @@ jobs:
           NEXT_PUBLIC_API_URL: 'https://exitboard.azurewebsites.net/api'
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
 
       - name: Zip artifact for deployment
         run: zip -r release.zip ./* .next
