@@ -45,40 +45,55 @@ export default function DocsPage() {
   const [selectedTab, setSelectedTab] = useState(0)
   const [loadedContent, setLoadedContent] = useState<Record<string, DocSection>>({})
   const [loading, setLoading] = useState<Record<string, boolean>>({})
+  const [error, setError] = useState<string | null>(null)
 
   async function loadContent(sectionId: string, type: 'api' | 'schema') {
     if (loadedContent[sectionId] || loading[sectionId]) return
 
     setLoading(prev => ({ ...prev, [sectionId]: true }))
+    setError(null)
 
     try {
-      // Fetch markdown file directly
-      const response = await fetch(`/docs/${type === 'api' ? 'API' : 'SCHEMA'}.md`)
-      if (!response.ok) throw new Error('Failed to load documentation')
+      console.log(`Fetching ${type} documentation...`)
+      const url = `/docs/${type === 'api' ? 'API' : 'SCHEMA'}.md`
+      console.log('URL:', url)
+      
+      const response = await fetch(url)
+      console.log('Response status:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Response error:', errorText)
+        throw new Error(`Failed to load documentation: ${response.statusText}`)
+      }
 
       const markdown = await response.text()
+      console.log('Markdown loaded, length:', markdown.length)
       
       // Remove the main title
       const contentWithoutTitle = markdown.replace(/^#[^#\n]*\n/, '')
       
       // Split into sections
       const sections = contentWithoutTitle.split('\n## ').filter(Boolean)
+      console.log('Found sections:', sections.length)
       
       // Process sections
       const processedSections = sections.map(section => {
         const lines = section.split('\n')
         const title = lines[0].trim()
         const content = '## ' + section
-        return {
-          id: getSectionId(title),
-          title,
-          content
-        }
+        const id = getSectionId(title)
+        console.log('Processing section:', { title, id })
+        return { id, title, content }
       })
 
       // Find the requested section
       const section = processedSections.find(s => s.id === sectionId)
-      if (!section) throw new Error('Section not found')
+      if (!section) {
+        console.error('Section not found:', sectionId)
+        console.log('Available sections:', processedSections.map(s => s.id))
+        throw new Error(`Section "${sectionId}" not found`)
+      }
 
       // Convert markdown to HTML
       const processedContent = await remark()
@@ -94,7 +109,9 @@ export default function DocsPage() {
         }
       }))
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       console.error('Error loading documentation:', error)
+      setError(errorMessage)
     } finally {
       setLoading(prev => ({ ...prev, [sectionId]: false }))
     }
@@ -111,6 +128,12 @@ export default function DocsPage() {
             Complete documentation for the ExitBoard API and database schema
           </p>
         </div>
+
+        {error && (
+          <div className="mt-4 p-4 bg-red-500/10 rounded-lg">
+            <p className="text-red-400">{error}</p>
+          </div>
+        )}
 
         <div className="mt-12">
           <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
