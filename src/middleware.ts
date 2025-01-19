@@ -12,20 +12,33 @@ const publicRoutes = [
   '/api/auth/signin',
   '/api/auth/signup',
   '/api/auth/verify-credentials',
+  '/api/auth/me',
+]
+
+// Define protected routes that require authentication
+const protectedRoutes = [
+  '/account',
+  '/admin',
+  '/post-job',
+  '/api/admin',
+  '/api/users',
 ]
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
   // Check if the path is public
-  const isPublicPath = publicRoutes.some(route => 
-    request.nextUrl.pathname === route || 
-    request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.startsWith('/static') ||
-    request.nextUrl.pathname.match(/\.[a-zA-Z0-9]+$/) // Files with extensions
-  )
+  const isPublicPath = publicRoutes.some(route => pathname === route) ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.match(/\.[a-zA-Z0-9]+$/) // Files with extensions
 
   if (isPublicPath) {
     return NextResponse.next()
   }
+
+  // Check if the path requires authentication
+  const isProtectedPath = protectedRoutes.some(route => pathname.startsWith(route))
 
   // Get token from Authorization header or cookie
   const authHeader = request.headers.get('authorization')
@@ -33,47 +46,45 @@ export async function middleware(request: NextRequest) {
     ? authHeader.substring(7) 
     : request.cookies.get('token')?.value
 
-  // If no token and not a public path, redirect to login
-  if (!token) {
-    if (request.nextUrl.pathname.startsWith('/api/')) {
+  // If accessing a protected route without a token, redirect to login
+  if (isProtectedPath && !token) {
+    if (pathname.startsWith('/api/')) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
-    return NextResponse.redirect(new URL('/auth/signin', request.url))
+    const searchParams = new URLSearchParams({ callbackUrl: pathname })
+    return NextResponse.redirect(new URL(`/auth/signin?${searchParams}`, request.url))
   }
 
   try {
-    // Verify token
-    jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key')
+    if (token) {
+      // Verify token
+      jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key')
 
-    // Forward the token to the API routes
-    const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('authorization', `Bearer ${token}`)
+      // Forward the token to the API routes
+      const requestHeaders = new Headers(request.headers)
+      requestHeaders.set('authorization', `Bearer ${token}`)
 
-    // Create response
-    const response = NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    })
-
-    // Set token cookie if it doesn't exist
-    if (!request.cookies.get('token')) {
-      response.cookies.set('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
+      // Create response
+      const response = NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
       })
+
+      return response
     }
 
-    return response
+    // For non-protected routes without token, allow access
+    return NextResponse.next()
   } catch (error) {
-    // If token is invalid and it's an API route, return 401
-    if (request.nextUrl.pathname.startsWith('/api/')) {
+    // If token is invalid
+    if (pathname.startsWith('/api/')) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
-    // For non-API routes, redirect to login
-    return NextResponse.redirect(new URL('/auth/signin', request.url))
+    
+    // For non-API routes, redirect to login with callback URL
+    const searchParams = new URLSearchParams({ callbackUrl: pathname })
+    return NextResponse.redirect(new URL(`/auth/signin?${searchParams}`, request.url))
   }
 }
 
