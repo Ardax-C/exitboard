@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuthToken } from '@/lib/auth';
 import UserDetailsModal from '@/components/UserDetailsModal';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface User {
   id: string;
@@ -18,6 +19,7 @@ interface User {
 export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -53,7 +55,13 @@ export default function AdminDashboard() {
       }
     } finally {
       setLoading(false);
+      setSyncing(false);
     }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    await fetchUsers();
   };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
@@ -110,6 +118,22 @@ export default function AdminDashboard() {
         throw new Error('Failed to update user status');
       }
 
+      // If the user is being deactivated, force logout their session
+      if (newStatus === 'DEACTIVATED') {
+        const logoutResponse = await fetch('/api/auth/force-logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ userId }),
+        });
+
+        if (!logoutResponse.ok) {
+          console.error('Failed to force logout user');
+        }
+      }
+
       // Refresh the users list
       fetchUsers();
       // If the user is currently selected in the modal, update their status there too
@@ -148,9 +172,19 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-900">
       <div className="p-6 max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-          <p className="mt-2 text-sm text-gray-400">Manage users and their roles from this secure admin area.</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+            <p className="mt-2 text-sm text-gray-400">Manage users and their roles from this secure admin area.</p>
+          </div>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ArrowPathIcon className={`h-5 w-5 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing...' : 'Sync Users'}
+          </button>
         </div>
       
         <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">

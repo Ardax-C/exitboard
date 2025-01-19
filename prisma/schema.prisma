@@ -19,6 +19,7 @@ model User {
   title       String?
   role        UserRole     @default(USER)
   status      AccountStatus @default(ACTIVE)
+  tokenInvalidatedAt DateTime?
   jobPostings JobPosting[]
 }
 
