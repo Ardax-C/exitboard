@@ -183,7 +183,7 @@ export default function DocsPage() {
                         </summary>
                         <div className="mt-4 px-6">
                           <div className="prose prose-invert 
-                            prose-h2:text-[#66D9EF] prose-h2:font-semibold
+                            prose-h2:text-[#66D9EF] prose-h2:font-semibold prose-h2:border-b prose-h2:border-gray-700/50 prose-h2:pb-2
                             prose-h3:text-[#A6E22E] prose-h3:font-medium
                             prose-p:text-gray-300
                             prose-strong:text-[#F92672] prose-strong:font-semibold
@@ -194,6 +194,7 @@ export default function DocsPage() {
                             max-w-none
                             [&_pre_code]:text-gray-300
                             [&_pre_.language-typescript]:text-[#FD971F]
+                            [&_pre_.language-prisma]:text-[#FD971F]
                             [&_.language-typescript_.string]:text-[#E6DB74]
                             [&_.language-typescript_.keyword]:text-[#F92672]
                             [&_.language-typescript_.function]:text-[#A6E22E]
@@ -201,7 +202,24 @@ export default function DocsPage() {
                             [&_.language-typescript_.operator]:text-[#F92672]
                             [&_.language-typescript_.punctuation]:text-gray-500
                             [&_.language-typescript_.property]:text-[#66D9EF]
-                            [&_.language-typescript_.comment]:text-gray-500">
+                            [&_.language-typescript_.comment]:text-gray-500
+                            [&_.language-prisma_.string]:text-[#E6DB74]
+                            [&_.language-prisma_.keyword]:text-[#F92672]
+                            [&_.language-prisma_.function]:text-[#A6E22E]
+                            [&_.language-prisma_.number]:text-[#AE81FF]
+                            [&_.language-prisma_.operator]:text-[#F92672]
+                            [&_.language-prisma_.punctuation]:text-gray-500
+                            [&_.language-prisma_.property]:text-[#66D9EF]
+                            [&_.language-prisma_.comment]:text-gray-500
+                            [&_dt]:text-[#F92672] [&_dt]:font-medium
+                            [&_dd]:text-[#E6DB74] [&_dd]:ml-4
+                            [&_li_strong]:text-[#66D9EF]
+                            [&_li>p]:text-[#E6DB74]
+                            [&_li>ul]:mt-1 [&_li>ul]:ml-4
+                            [&_blockquote]:border-l-[#A6E22E] [&_blockquote]:bg-gray-800/30
+                            [&_table]:border-gray-700
+                            [&_th]:bg-gray-800/50 [&_th]:text-[#66D9EF]
+                            [&_td]:border-gray-700 [&_td]:text-[#E6DB74]">
                             {loading[item.id] ? (
                               <div className="flex items-center justify-center py-8">
                                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-r-transparent"></div>
