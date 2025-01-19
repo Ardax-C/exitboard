@@ -118,7 +118,40 @@ export function getAuthHeaders(): Record<string, string> {
   };
 }
 
-// Helper function to make authenticated requests
+// Check if the current session is still valid
+async function checkSession() {
+  try {
+    const response = await fetch('/api/auth/session', {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      // Session is invalid - clear auth and redirect
+      removeAuthToken();
+      window.location.href = '/auth/signin';
+      throw new Error('Session expired');
+    }
+  } catch (error) {
+    removeAuthToken();
+    window.location.href = '/auth/signin';
+    throw error;
+  }
+}
+
+// Start periodic session check
+if (typeof window !== 'undefined') {
+  // Check session every minute
+  setInterval(checkSession, 60000);
+  
+  // Also check when tab becomes visible
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && getAuthToken()) {
+      checkSession();
+    }
+  });
+}
+
+// Update fetchWithAuth to check session on 401 responses
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const token = getAuthToken();
   if (!token) {
@@ -135,10 +168,13 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   });
 
   if (response.status === 401) {
-    // Token is invalid or expired
-    removeAuthToken();
-    window.location.href = '/auth/signin';
-    throw new Error('Session expired');
+    // Token might be invalid - check session
+    try {
+      await checkSession();
+    } catch {
+      // checkSession will handle redirect if needed
+      throw new Error('Session expired');
+    }
   }
 
   return response;

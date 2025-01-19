@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyAuth } from '@/lib/auth'
+import jwt from 'jsonwebtoken'
 
 // Define public routes that don't require authentication
 const publicRoutes = [
@@ -57,18 +57,8 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    // Verify token and check user status
-    const authResult = await verifyAuth(token)
-    
-    if (!authResult.isValid) {
-      // If token is invalid or user is deactivated, clear token and redirect
-      const response = pathname.startsWith('/api/')
-        ? new NextResponse(authResult.error || 'Unauthorized', { status: 401 })
-        : NextResponse.redirect(new URL('/auth/signin', request.url))
-
-      response.cookies.delete('token')
-      return response
-    }
+    // Only verify token structure - detailed checks happen in API routes
+    jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key')
 
     // Forward the token to API routes
     const requestHeaders = new Headers(request.headers)
@@ -80,7 +70,7 @@ export async function middleware(request: NextRequest) {
       },
     })
   } catch (error) {
-    // If verification fails, clear token and redirect to login
+    // If token is invalid, clear it and redirect to login
     const response = pathname.startsWith('/api/')
       ? new NextResponse('Unauthorized', { status: 401 })
       : NextResponse.redirect(new URL('/auth/signin', request.url))
