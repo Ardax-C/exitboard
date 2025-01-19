@@ -1,16 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import jwt from 'jsonwebtoken';
+import { UserRole } from '@prisma/client';
+
+async function verifyAdminToken(request: NextRequest) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key') as any;
+    if (!decoded?.userId) {
+      return null;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+    });
+
+    if (!user || user.role !== UserRole.ADMIN) {
+      return null;
+    }
+
+    return user;
+  } catch (error) {
+    return null;
+  }
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    const admin = await verifyAdminToken(request);
+    if (!admin) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
@@ -42,9 +68,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    const admin = await verifyAdminToken(request);
+    if (!admin) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 

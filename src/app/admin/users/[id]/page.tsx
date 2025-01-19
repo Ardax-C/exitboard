@@ -39,6 +39,9 @@ export default function UserDetails() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Not authenticated');
+        }
         throw new Error('Failed to fetch user details');
       }
 
@@ -71,6 +74,9 @@ export default function UserDetails() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Not authenticated');
+        }
         throw new Error('Failed to update user role');
       }
 
@@ -78,6 +84,9 @@ export default function UserDetails() {
       fetchUser();
     } catch (err: any) {
       setError(err instanceof Error ? err.message : 'An error occurred');
+      if (err?.message === 'Not authenticated') {
+        router.push('/auth/signin');
+      }
     }
   };
 
