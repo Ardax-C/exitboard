@@ -8,6 +8,7 @@ interface User {
   name: string;
   title: string;
   role: string;
+  status: 'ACTIVE' | 'DEACTIVATED';
   createdAt: string;
 }
 
@@ -16,10 +17,15 @@ interface UserDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRoleChange: (newRole: string) => void;
+  onStatusChange: (newStatus: 'ACTIVE' | 'DEACTIVATED') => void;
 }
 
-export default function UserDetailsModal({ user, isOpen, onClose, onRoleChange }: UserDetailsModalProps) {
+export default function UserDetailsModal({ user, isOpen, onClose, onRoleChange, onStatusChange }: UserDetailsModalProps) {
   if (!user) return null;
+
+  const handleDeactivate = () => {
+    onStatusChange(user.status === 'ACTIVE' ? 'DEACTIVATED' : 'ACTIVE');
+  };
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
@@ -90,6 +96,18 @@ export default function UserDetailsModal({ user, isOpen, onClose, onRoleChange }
                         </div>
                       </div>
                       <div>
+                        <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider">Status</h3>
+                        <div className="mt-1">
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            user.status === 'ACTIVE' 
+                              ? 'bg-green-400/10 text-green-400'
+                              : 'bg-red-400/10 text-red-400'
+                          }`}>
+                            {user.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
                         <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider">Joined</h3>
                         <p className="mt-1 text-sm text-white">
                           {new Date(user.createdAt).toLocaleDateString()}
@@ -101,10 +119,14 @@ export default function UserDetailsModal({ user, isOpen, onClose, onRoleChange }
                 <div className="mt-8 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
                   <button
                     type="button"
-                    className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 sm:col-start-2"
-                    onClick={onClose}
+                    className={`inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:col-start-2 ${
+                      user.status === 'ACTIVE'
+                        ? 'bg-red-600 hover:bg-red-500 focus-visible:outline-red-600'
+                        : 'bg-green-600 hover:bg-green-500 focus-visible:outline-green-600'
+                    }`}
+                    onClick={handleDeactivate}
                   >
-                    Deactivate User
+                    {user.status === 'ACTIVE' ? 'Deactivate User' : 'Activate User'}
                   </button>
                   <button
                     type="button"

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { compare } from 'bcrypt';
 import prisma from '@/lib/prisma';
+import { AccountStatus } from '@prisma/client';
 
 export async function POST(request: Request) {
   try {
@@ -18,6 +19,11 @@ export async function POST(request: Request) {
       return new NextResponse('Invalid credentials', { status: 401 });
     }
 
+    // Check if account is deactivated
+    if (user.status === AccountStatus.DEACTIVATED) {
+      return new NextResponse('Account has been deactivated', { status: 403 });
+    }
+
     const isPasswordValid = await compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -29,6 +35,7 @@ export async function POST(request: Request) {
       email: user.email,
       name: user.name,
       role: user.role,
+      status: user.status,
     });
   } catch (error) {
     console.error('Verify credentials error:', error);

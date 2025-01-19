@@ -11,6 +11,7 @@ interface User {
   name: string;
   title: string;
   role: string;
+  status: 'ACTIVE' | 'DEACTIVATED';
   createdAt: string;
 }
 
@@ -89,6 +90,40 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleStatusChange = async (userId: string, newStatus: 'ACTIVE' | 'DEACTIVATED') => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user status');
+      }
+
+      // Refresh the users list
+      fetchUsers();
+      // If the user is currently selected in the modal, update their status there too
+      if (selectedUser?.id === userId) {
+        setSelectedUser({ ...selectedUser, status: newStatus });
+      }
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      if (err?.message === 'Not authenticated') {
+        router.push('/auth/signin');
+      }
+    }
+  };
+
   const handleUserClick = (user: User) => {
     setSelectedUser(user);
     setIsModalOpen(true);
@@ -127,6 +162,7 @@ export default function AdminDashboard() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Title</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Joined</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -146,6 +182,15 @@ export default function AdminDashboard() {
                         <option value="USER">User</option>
                         <option value="ADMIN">Admin</option>
                       </select>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        user.status === 'ACTIVE' 
+                          ? 'bg-green-400/10 text-green-400'
+                          : 'bg-red-400/10 text-red-400'
+                      }`}>
+                        {user.status}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       {new Date(user.createdAt).toLocaleDateString()}
@@ -171,6 +216,7 @@ export default function AdminDashboard() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onRoleChange={(newRole) => selectedUser && handleRoleChange(selectedUser.id, newRole)}
+        onStatusChange={(newStatus) => selectedUser && handleStatusChange(selectedUser.id, newStatus)}
       />
     </div>
   );

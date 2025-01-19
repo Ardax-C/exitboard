@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
-import { UserRole } from '@prisma/client';
+import { UserRole, AccountStatus } from '@prisma/client';
 
 async function verifyAdminToken(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
@@ -48,6 +48,7 @@ export async function GET(
         email: true,
         title: true,
         role: true,
+        status: true,
         createdAt: true,
       },
     });
@@ -74,21 +75,36 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { role } = body;
+    const { role, status } = body;
 
-    if (!role || !['USER', 'ADMIN'].includes(role)) {
+    // Validate role if provided
+    if (role && !Object.values(UserRole).includes(role)) {
       return new NextResponse('Invalid role', { status: 400 });
+    }
+
+    // Validate status if provided
+    if (status && !Object.values(AccountStatus).includes(status)) {
+      return new NextResponse('Invalid status', { status: 400 });
+    }
+
+    // Don't allow deactivating your own account
+    if (status === AccountStatus.DEACTIVATED && params.id === admin.id) {
+      return new NextResponse('Cannot deactivate your own account', { status: 400 });
     }
 
     const user = await prisma.user.update({
       where: { id: params.id },
-      data: { role },
+      data: {
+        ...(role && { role }),
+        ...(status && { status }),
+      },
       select: {
         id: true,
         name: true,
         email: true,
         title: true,
         role: true,
+        status: true,
         createdAt: true,
       },
     });
