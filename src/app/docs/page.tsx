@@ -193,7 +193,26 @@ export default function DocsPage() {
                           />
                         </summary>
                         <div className="mt-4 px-6">
-                          <div className="prose prose-invert prose-pre:bg-gray-800/50 prose-pre:border prose-pre:border-gray-700/50 prose-code:text-indigo-300 prose-a:text-indigo-400 hover:prose-a:text-indigo-300 prose-headings:text-gray-100 max-w-none">
+                          <div className="prose prose-invert 
+                            prose-h2:text-[#66D9EF] prose-h2:font-semibold
+                            prose-h3:text-[#A6E22E] prose-h3:font-medium
+                            prose-p:text-gray-300
+                            prose-strong:text-[#F92672] prose-strong:font-semibold
+                            prose-code:text-[#E6DB74] prose-code:bg-gray-800/75 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:border prose-code:border-gray-700/50
+                            prose-pre:bg-[#272822] prose-pre:border prose-pre:border-gray-700/50 prose-pre:shadow-lg
+                            prose-a:text-[#66D9EF] hover:prose-a:text-[#66D9EF]/80
+                            prose-ul:text-gray-300 prose-li:text-gray-300
+                            max-w-none
+                            [&_pre_code]:text-gray-300
+                            [&_pre_.language-typescript]:text-[#FD971F]
+                            [&_.language-typescript_.string]:text-[#E6DB74]
+                            [&_.language-typescript_.keyword]:text-[#F92672]
+                            [&_.language-typescript_.function]:text-[#A6E22E]
+                            [&_.language-typescript_.number]:text-[#AE81FF]
+                            [&_.language-typescript_.operator]:text-[#F92672]
+                            [&_.language-typescript_.punctuation]:text-gray-500
+                            [&_.language-typescript_.property]:text-[#66D9EF]
+                            [&_.language-typescript_.comment]:text-gray-500">
                             {loading[item.id] ? (
                               <div className="flex items-center justify-center py-8">
                                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-r-transparent"></div>
