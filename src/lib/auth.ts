@@ -12,6 +12,7 @@ export interface User {
   title?: string;
   company?: string;
   role: UserRole;
+  status: AccountStatus;
   createdAt: Date;
 }
 
