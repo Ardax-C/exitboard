@@ -27,9 +27,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Get token from Authorization header
+  // Get token from Authorization header or cookie
   const authHeader = request.headers.get('authorization')
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
+  const token = authHeader?.startsWith('Bearer ') 
+    ? authHeader.substring(7) 
+    : request.cookies.get('token')?.value
 
   // If no token and not a public path, redirect to login
   if (!token) {
@@ -47,11 +49,24 @@ export async function middleware(request: NextRequest) {
     const requestHeaders = new Headers(request.headers)
     requestHeaders.set('authorization', `Bearer ${token}`)
 
-    return NextResponse.next({
+    // Create response
+    const response = NextResponse.next({
       request: {
         headers: requestHeaders,
       },
     })
+
+    // Set token cookie if it doesn't exist
+    if (!request.cookies.get('token')) {
+      response.cookies.set('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      })
+    }
+
+    return response
   } catch (error) {
     // If token is invalid and it's an API route, return 401
     if (request.nextUrl.pathname.startsWith('/api/')) {

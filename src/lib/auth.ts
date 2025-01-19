@@ -77,18 +77,28 @@ export const authOptions: NextAuthOptions = {
 // Auth utility functions
 export function setAuthToken(token: string) {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('token', token);
+    localStorage.setItem('token', token)
+    // Also set cookie
+    document.cookie = `token=${token}; path=/; secure; samesite=lax`
   }
 }
 
 export function getAuthToken() {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token');
+  if (typeof window === 'undefined') return null
+  // Try to get token from localStorage first
+  const token = localStorage.getItem('token')
+  if (token) return token
+  
+  // If not in localStorage, try to get from cookie
+  const tokenCookie = document.cookie.split('; ').find(row => row.startsWith('token='))
+  return tokenCookie ? tokenCookie.split('=')[1] : null
 }
 
 export function removeAuthToken() {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem('token');
+    localStorage.removeItem('token')
+    // Also remove cookie
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
   }
 }
 
