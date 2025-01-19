@@ -82,6 +82,9 @@ export function setAuthToken(token: string) {
     
     // Set cookie with proper attributes
     document.cookie = `token=${token}; path=/; max-age=604800; secure; samesite=strict`
+    
+    // Start session check
+    updateSessionCheck();
   }
 }
 
@@ -105,6 +108,12 @@ export function removeAuthToken() {
     
     // Clear cookie
     document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=strict'
+    
+    // Stop session check
+    if (sessionCheckInterval) {
+      clearInterval(sessionCheckInterval);
+      sessionCheckInterval = null;
+    }
   }
 }
 
@@ -120,6 +129,9 @@ export function getAuthHeaders(): Record<string, string> {
 
 // Check if the current session is still valid
 async function checkSession() {
+  const token = getAuthToken();
+  if (!token) return false;
+
   try {
     const response = await fetch('/api/auth/session', {
       headers: getAuthHeaders()
@@ -140,9 +152,12 @@ async function checkSession() {
 }
 
 let sessionCheckPromise: Promise<boolean> | null = null;
+let sessionCheckInterval: NodeJS.Timeout | null = null;
 
 // Debounced session check to prevent multiple simultaneous checks
 async function debouncedSessionCheck() {
+  if (!getAuthToken()) return false;
+  
   if (!sessionCheckPromise) {
     sessionCheckPromise = checkSession().finally(() => {
       sessionCheckPromise = null;
@@ -151,23 +166,39 @@ async function debouncedSessionCheck() {
   return sessionCheckPromise;
 }
 
-// Start periodic session check
+// Start or stop session check based on auth state
+function updateSessionCheck() {
+  const hasToken = Boolean(getAuthToken());
+  
+  // Clear existing interval if any
+  if (sessionCheckInterval) {
+    clearInterval(sessionCheckInterval);
+    sessionCheckInterval = null;
+  }
+  
+  // Start new interval if user is logged in
+  if (hasToken) {
+    sessionCheckInterval = setInterval(debouncedSessionCheck, 15000);
+    // Do an immediate check
+    debouncedSessionCheck();
+  }
+}
+
+// Initialize session check on load and token changes
 if (typeof window !== 'undefined') {
-  // Check session every 15 seconds
-  setInterval(debouncedSessionCheck, 15000);
+  // Initial setup
+  updateSessionCheck();
   
   // Check when tab becomes visible
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && getAuthToken()) {
-      debouncedSessionCheck();
+    if (document.visibilityState === 'visible') {
+      updateSessionCheck();
     }
   });
 
   // Check on route changes
   window.addEventListener('popstate', () => {
-    if (getAuthToken()) {
-      debouncedSessionCheck();
-    }
+    updateSessionCheck();
   });
 }
 
