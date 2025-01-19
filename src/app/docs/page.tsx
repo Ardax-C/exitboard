@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Tab } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/24/outline'
+import { remark } from 'remark'
+import html from 'remark-html'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -12,6 +14,13 @@ interface DocSection {
   id: string
   title: string
   content: string
+}
+
+function getSectionId(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
 }
 
 export default function DocsPage() {
@@ -43,11 +52,47 @@ export default function DocsPage() {
     setLoading(prev => ({ ...prev, [sectionId]: true }))
 
     try {
-      const response = await fetch(`/api/docs?type=${type}&section=${sectionId}`)
-      if (!response.ok) throw new Error('Failed to load content')
+      // Fetch markdown file directly
+      const response = await fetch(`/docs/${type === 'api' ? 'API' : 'SCHEMA'}.md`)
+      if (!response.ok) throw new Error('Failed to load documentation')
 
-      const content = await response.json()
-      setLoadedContent(prev => ({ ...prev, [sectionId]: content }))
+      const markdown = await response.text()
+      
+      // Remove the main title
+      const contentWithoutTitle = markdown.replace(/^#[^#\n]*\n/, '')
+      
+      // Split into sections
+      const sections = contentWithoutTitle.split('\n## ').filter(Boolean)
+      
+      // Process sections
+      const processedSections = sections.map(section => {
+        const lines = section.split('\n')
+        const title = lines[0].trim()
+        const content = '## ' + section
+        return {
+          id: getSectionId(title),
+          title,
+          content
+        }
+      })
+
+      // Find the requested section
+      const section = processedSections.find(s => s.id === sectionId)
+      if (!section) throw new Error('Section not found')
+
+      // Convert markdown to HTML
+      const processedContent = await remark()
+        .use(html)
+        .process(section.content)
+
+      setLoadedContent(prev => ({
+        ...prev,
+        [sectionId]: {
+          id: section.id,
+          title: section.title,
+          content: processedContent.toString()
+        }
+      }))
     } catch (error) {
       console.error('Error loading documentation:', error)
     } finally {
