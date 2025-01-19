@@ -15,22 +15,40 @@ export async function getDocContent(type: 'api' | 'schema', sectionId: string): 
     }
 
     const markdown = await response.text()
-    const sections = markdown.split(/^## /m)
-    const section = sections.find(s => getSectionId(s.split('\n')[0]) === sectionId)
+    
+    // First, remove the main title (# heading)
+    const contentWithoutTitle = markdown.replace(/^#[^#\n]*\n/, '')
+    
+    // Split into sections, but keep the ## prefix
+    const sections = contentWithoutTitle.split('\n## ').filter(Boolean)
+    
+    // Process each section
+    const processedSections = sections.map(section => {
+      const lines = section.split('\n')
+      const title = lines[0].trim()
+      const content = '## ' + section // Add back the ## prefix
+      return {
+        id: getSectionId(title),
+        title,
+        content
+      }
+    })
 
+    // Find the requested section
+    const section = processedSections.find(s => s.id === sectionId)
     if (!section) {
       return null
     }
 
-    const title = section.split('\n')[0].trim()
-    const content = await remark()
+    // Convert markdown to HTML
+    const processedContent = await remark()
       .use(html)
-      .process('## ' + section)
+      .process(section.content)
 
     return {
-      id: sectionId,
-      title,
-      content: content.toString()
+      id: section.id,
+      title: section.title,
+      content: processedContent.toString()
     }
   } catch (error) {
     console.error('Error loading documentation:', error)
