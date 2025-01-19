@@ -15,22 +15,33 @@ const publicRoutes = [
   '/api/auth/me',
   '/_next',
   '/static',
+  '/favicon.ico',
+  '/images',
+  '/assets'
 ]
 
 // Define protected routes that require authentication
 const protectedRoutes = [
   '/account',
   '/admin',
+  '/post',
   '/post-job',
   '/api/admin',
   '/api/users',
+  '/api/jobs/create'
 ]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Check if the path is public
+  // Skip middleware for public routes and static files
   if (publicRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.next()
+  }
+
+  // Check if route requires authentication
+  const requiresAuth = protectedRoutes.some(route => pathname.startsWith(route))
+  if (!requiresAuth) {
     return NextResponse.next()
   }
 
