@@ -319,12 +319,9 @@ async function decryptResponse(data: { encrypted: string; iv: string }): Promise
     base64ToUint8Array(data.encrypted)
   )
 
-  const token = jwt.sign({
-    userId: JSON.parse(new TextDecoder().decode(decrypted)).id,
-  }, process.env.JWT_SECRET || 'fallback-secret-key');
-
-  const user = JSON.parse(new TextDecoder().decode(decrypted)) as User;
-  return { token, user };
+  // Parse the decrypted data
+  const decryptedData = JSON.parse(new TextDecoder().decode(decrypted));
+  return decryptedData;
 }
 
 export async function signIn(data: { 
